@@ -2,6 +2,8 @@
 #define __MOTOR_H
 
 void Motor_Init(void);
-void Motor_SetSpeed(int8_t Speed);
-
+//左电机
+void MotorLeft_SetSpeed(int8_t Speed);
+//右电机
+void MotorRight_SetSpeed(int8_t Speed);
 #endif
