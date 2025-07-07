@@ -3,51 +3,51 @@
 
 int8_t Speed = 50;
 /**
-  * º¯    Êı£º³õÊ¼»¯
-  * ²Î    Êı£ºÎŞ
-  * ·µ »Ø Öµ£ºÎŞ
+  * å‡½    æ•°ï¼šåˆå§‹åŒ–
+  * å‚    æ•°ï¼šæ— 
+  * è¿” å› å€¼ï¼šæ— 
   */
 void SmartCar_Init(void)
 {
 	Motor_Init();
 }
 
-//ÏòÇ°
+//å‘å‰
 void Move_Forward(void)
 {
 	MotorLeft_SetSpeed(Speed);
 	MotorRight_SetSpeed(Speed);
 }
 
-//Ïòºó
+//å‘å
 void Move_Backward(void)
 {
 	MotorLeft_SetSpeed(-Speed);
 	MotorRight_SetSpeed(-Speed);
 }
 
-//Í£Ö¹
+//åœæ­¢
 void Car_Stop(void)
 {
 	MotorLeft_SetSpeed(0);
 	MotorRight_SetSpeed(0);
 }
 
-//Ïò×ó×ª
+//å‘å·¦è½¬
 void Turn_Left(void)
 {
 	MotorLeft_SetSpeed(Speed-40);
 	MotorRight_SetSpeed(Speed);
 }
 
-//ÏòÓÒ×ª
+//å‘å³è½¬
 void Turn_Right(void)
 {
 	MotorLeft_SetSpeed(Speed);
 	MotorRight_SetSpeed(Speed-40);
 }
 
-//Ë³Ê±ÕëĞı×ª
+//é¡ºæ—¶é’ˆæ—‹è½¬
 void Clockwise_Rotation(void)
 {
 	MotorLeft_SetSpeed(Speed);
@@ -55,7 +55,7 @@ void Clockwise_Rotation(void)
 }
 
 
-//ÄæÊ±ÕëĞı×ª
+//é€†æ—¶é’ˆæ—‹è½¬
 void CounterClockwise_Rotation(void)
 {
 	MotorLeft_SetSpeed(-Speed);

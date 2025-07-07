@@ -2,19 +2,19 @@
 #define __SMARTCAR_H
 
 void SmartCar_Init(void);
-//ÏòÇ°
+//å‘å‰
 void Move_Forward(void);
-//Ïòºó
+//å‘å
 void Move_Backward(void);
-//Í£Ö¹
+//åœæ­¢
 void Car_Stop(void);
-//Ïò×ó×ª
+//å‘å·¦è½¬
 void Turn_Left(void);
-//ÏòÓÒ×ª
+//å‘å³è½¬
 void Turn_Right(void);
-//Ë³Ê±ÕëĞı×ª
+//é¡ºæ—¶é’ˆæ—‹è½¬
 void Clockwise_Rotation(void);
-//ÄæÊ±ÕëĞı×ª
+//é€†æ—¶é’ˆæ—‹è½¬
 void CounterClockwise_Rotation(void);
 #endif
 
