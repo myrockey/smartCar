@@ -9,6 +9,7 @@ int8_t Speed = 50;
   */
 void SmartCar_Init(void)
 {
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 	Motor_Init();
 }
 

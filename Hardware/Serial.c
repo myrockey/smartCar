@@ -13,20 +13,20 @@ uint8_t Serial_RxFlag;		//定义串口接收的标志位变量
 void Serial_Init(void)
 {
 	/*开启时钟*/
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);	//开启USART1的时钟
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);	//开启GPIOA的时钟
+	RCC_APB2PeriphClockCmd(HC_05_CLK, ENABLE);	//开启USART1的时钟
+	RCC_APB2PeriphClockCmd(HC_05_GPIO_CLK, ENABLE);	//开启GPIOA的时钟
 	
 	/*GPIO初始化*/
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+	GPIO_InitStructure.GPIO_Pin = TX_GPIO_PIN;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);					//将PA9引脚初始化为复用推挽输出
+	GPIO_Init(HC_05_GPIO_PORT, &GPIO_InitStructure);					//将PA9引脚初始化为复用推挽输出
 	
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+	GPIO_InitStructure.GPIO_Pin = RX_GPIO_PIN;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);					//将PA10引脚初始化为上拉输入
+	GPIO_Init(HC_05_GPIO_PORT, &GPIO_InitStructure);					//将PA10引脚初始化为上拉输入
 	
 	/*USART初始化*/
 	USART_InitTypeDef USART_InitStructure;					//定义结构体变量
@@ -36,13 +36,13 @@ void Serial_Init(void)
 	USART_InitStructure.USART_Parity = USART_Parity_No;		//奇偶校验，不需要
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;	//停止位，选择1位
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;		//字长，选择8位
-	USART_Init(USART1, &USART_InitStructure);				//将结构体变量交给USART_Init，配置USART1
+	USART_Init(HC_05_USARTX, &USART_InitStructure);				//将结构体变量交给USART_Init，配置USART1
 	
 	/*中断输出配置*/
-	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);			//开启串口接收数据的中断
+	USART_ITConfig(HC_05_USARTX, USART_IT_RXNE, ENABLE);			//开启串口接收数据的中断
 	
 	/*NVIC中断分组*/
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);			//配置NVIC为分组2
+	//NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);			//配置NVIC为分组2
 	
 	/*NVIC配置*/
 	NVIC_InitTypeDef NVIC_InitStructure;					//定义结构体变量
@@ -53,7 +53,7 @@ void Serial_Init(void)
 	NVIC_Init(&NVIC_InitStructure);							//将结构体变量交给NVIC_Init，配置NVIC外设
 	
 	/*USART使能*/
-	USART_Cmd(USART1, ENABLE);								//使能USART1，串口开始运行
+	USART_Cmd(HC_05_USARTX, ENABLE);								//使能USART1，串口开始运行
 }
 
 /**
@@ -63,7 +63,7 @@ void Serial_Init(void)
   */
 void Serial_SendByte(uint8_t Byte)
 {
-	USART_SendData(USART1, Byte);		//将字节数据写入数据寄存器，写入后USART自动生成时序波形
+	USART_SendData(HC_05_USARTX, Byte);		//将字节数据写入数据寄存器，写入后USART自动生成时序波形
 	while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);	//等待发送完成
 	/*下次写入数据寄存器会自动清除发送完成标志位，故此循环后，无需清除标志位*/
 }
@@ -188,11 +188,11 @@ uint8_t Serial_GetRxData(void)
   */
 void USART1_IRQHandler(void)
 {
-	if (USART_GetITStatus(USART1, USART_IT_RXNE) == SET)		//判断是否是USART1的接收事件触发的中断
+	if (USART_GetITStatus(HC_05_USARTX, USART_IT_RXNE) == SET)		//判断是否是USART1的接收事件触发的中断
 	{
-		Serial_RxData = USART_ReceiveData(USART1);				//读取数据寄存器，存放在接收的数据变量
+		Serial_RxData = USART_ReceiveData(HC_05_USARTX);				//读取数据寄存器，存放在接收的数据变量
 		Serial_RxFlag = 1;										//置接收标志位变量为1
-		USART_ClearITPendingBit(USART1, USART_IT_RXNE);			//清除USART1的RXNE标志位
+		USART_ClearITPendingBit(HC_05_USARTX, USART_IT_RXNE);			//清除USART1的RXNE标志位
 																//读取数据寄存器会自动清除此标志位
 																//如果已经读取了数据寄存器，也可以不执行此代码
 	}
