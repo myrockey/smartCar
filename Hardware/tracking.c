@@ -5,7 +5,7 @@
 extern int distance;
 
 //3路寻迹模块
-void Tracking_GPIO_Config(void)
+void Tracking_Init(void)
 {
   GPIO_InitTypeDef  GPIO_InitStructure;
 	 

@@ -13,7 +13,7 @@
 #define Buzzer_OFF             GPIO_ResetBits(Buzzer_GPIO_PORT,Buzzer_GPIO_PIN)
 #define Buzzer_ON			   GPIO_SetBits(Buzzer_GPIO_PORT,Buzzer_GPIO_PIN)
                     
-void Buzzer_GPIO_Config(void);
+void Buzzer_Init(void);
 
 #endif
 

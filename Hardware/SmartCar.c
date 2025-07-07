@@ -1,4 +1,4 @@
-#include "stm32f10x.h"                  // Device header
+#include "SmartCar.h"
 #include "Motor.h"
 
 int8_t Speed = 50;
@@ -9,7 +9,6 @@ int8_t Speed = 50;
   */
 void SmartCar_Init(void)
 {
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 	Motor_Init();
 }
 

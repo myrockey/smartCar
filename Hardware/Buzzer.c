@@ -1,6 +1,6 @@
 #include "Buzzer.h"
 
-void Buzzer_GPIO_Config(void)
+void Buzzer_Init(void)
 {		
 		/*定义一个GPIO_InitTypeDef类型的结构体*/
 		GPIO_InitTypeDef GPIO_InitStructure;
