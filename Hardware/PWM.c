@@ -1,4 +1,4 @@
-#include "stm32f10x.h"                  // Device header
+#include "PWM.h"
 
 /**
   * 函    数：PWM初始化

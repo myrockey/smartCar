@@ -1,6 +1,7 @@
 #ifndef __SERIAL_H
 #define __SERIAL_H
 
+#include "stm32f10x.h"                  // Device header
 // 配置蓝牙模块
 #include <stdio.h>
 
