@@ -11,3 +11,4 @@ PA9 PA10        Serial(USART1)
 PB6 PB7 PB8 PB9 OLED
 PB3 PB4 PB5     Tracking
 PB0 PB1         Ultrasonic(TIM3)
+PB10 PB11       VoiceIdentify(USART2)

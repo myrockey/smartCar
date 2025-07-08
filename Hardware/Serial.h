@@ -20,6 +20,20 @@
 #define HC_05_IRQn          USART1_IRQn
 #define HC_05_IRQHandler    USART1_IRQHandler
 
+// 配置WIFI模块ESP8266
+#define ESP8266_GPIO_PORT    GPIOB		                /* GPIO端口 */
+#define ESP8266_GPIO_APBX    RCC_APB2PeriphClockCmd
+#define ESP8266_GPIO_CLK 	RCC_APB2Periph_GPIOB		/* GPIO端口时钟 */
+
+#define ESP8266_RX_GPIO_PIN	GPIO_Pin_10	
+#define ESP8266_TX_GPIO_PIN	GPIO_Pin_11
+
+#define ESP8266_USARTX       USART2
+#define ESP8266_APBX         RCC_APB1PeriphClockCmd
+#define ESP8266_CLK          RCC_APB1Periph_USART2
+#define ESP8266_IRQn         USART2_IRQn
+#define ESP8266_IRQHandler   USART2_IRQHandler
+
 // 配置天问语音识别模块ASRPRO
 #define ASRPRO_GPIO_PORT    GPIOB		                /* GPIO端口 */
 #define ASRPRO_GPIO_APBX    RCC_APB2PeriphClockCmd

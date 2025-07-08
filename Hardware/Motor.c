@@ -10,7 +10,7 @@ void Motor_Init(void)
 	//GPIOA初始化
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;//推挽输出
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;//PA4 PA5 PA6 PA7 引脚
+	GPIO_InitStructure.GPIO_Pin = TB6612_GPIO_PIN_AIN1 | TB6612_GPIO_PIN_AIN2 | TB6612_GPIO_PIN_BIN1 | TB6612_GPIO_PIN_BIN2;//PA4 PA5 PA6 PA7 引脚
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA,&GPIO_InitStructure);
 	
@@ -23,23 +23,23 @@ void MotorLeft_SetSpeed(int8_t Speed)
 	if(Speed > 0)
 	{
 		//假设为正转
-		GPIO_SetBits(GPIOA,GPIO_Pin_4);//置高电平
-		GPIO_ResetBits(GPIOA,GPIO_Pin_5);//置低电平
-		PWM_SetCompare2(Speed);
+		GPIO_SetBits(GPIOA,TB6612_GPIO_PIN_AIN1);//置高电平
+		GPIO_ResetBits(GPIOA,TB6612_GPIO_PIN_AIN2);//置低电平
+		PWM_SetCompare2_Motor(Speed);
 	}
 	else if(Speed == 0)
 	{
 		//假设为正转
-		GPIO_SetBits(GPIOA,GPIO_Pin_4);//置高电平
-		GPIO_ResetBits(GPIOA,GPIO_Pin_5);//置低电平
-		PWM_SetCompare2(Speed);
+		GPIO_SetBits(GPIOA,TB6612_GPIO_PIN_AIN1);//置高电平
+		GPIO_ResetBits(GPIOA,TB6612_GPIO_PIN_AIN2);//置低电平
+		PWM_SetCompare2_Motor(Speed);
 	}
 	else
 	{
 		//反之则为反转
-		GPIO_ResetBits(GPIOA,GPIO_Pin_4);//置低电平
-		GPIO_SetBits(GPIOA,GPIO_Pin_5);//置高电平
-		PWM_SetCompare2(-Speed);//PWM只能给正数
+		GPIO_ResetBits(GPIOA,TB6612_GPIO_PIN_AIN1);//置低电平
+		GPIO_SetBits(GPIOA,TB6612_GPIO_PIN_AIN2);//置高电平
+		PWM_SetCompare2_Motor(-Speed);//PWM只能给正数
 	}
 }
 
@@ -49,22 +49,22 @@ void MotorRight_SetSpeed(int8_t Speed)
 	if(Speed > 0)
 	{
 		//假设为正转
-		GPIO_SetBits(GPIOA,GPIO_Pin_6);//置高电平
-		GPIO_ResetBits(GPIOA,GPIO_Pin_7);//置低电平
-		PWM_SetCompare3(Speed);
+		GPIO_SetBits(GPIOA,TB6612_GPIO_PIN_BIN1);//置高电平
+		GPIO_ResetBits(GPIOA,TB6612_GPIO_PIN_BIN2);//置低电平
+		PWM_SetCompare3_Motor(Speed);
 	}
 	else if(Speed == 0)
 	{
 		//假设为正转
-		GPIO_SetBits(GPIOA,GPIO_Pin_6);//置高电平
-		GPIO_ResetBits(GPIOA,GPIO_Pin_7);//置低电平
-		PWM_SetCompare3(Speed);
+		GPIO_SetBits(GPIOA,TB6612_GPIO_PIN_BIN1);//置高电平
+		GPIO_ResetBits(GPIOA,TB6612_GPIO_PIN_BIN2);//置低电平
+		PWM_SetCompare3_Motor(Speed);
 	}
 	else
 	{
 		//反之则为反转
-		GPIO_ResetBits(GPIOA,GPIO_Pin_6);//置低电平
-		GPIO_SetBits(GPIOA,GPIO_Pin_7);//置高电平
-		PWM_SetCompare3(-Speed);//PWM只能给正数
+		GPIO_ResetBits(GPIOA,TB6612_GPIO_PIN_BIN1);//置低电平
+		GPIO_SetBits(GPIOA,TB6612_GPIO_PIN_BIN2);//置高电平
+		PWM_SetCompare3_Motor(-Speed);//PWM只能给正数
 	}
 }
