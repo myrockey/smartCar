@@ -1,5 +1,7 @@
+#include "stm32f10x.h"                  // Device header
 #include "Ultrasonic.h"
 #include "motor.h"
+#include "Delay.h"
 
 uint16_t msHcCount = 0;//定时器计数
 extern int distance;//距障碍物距离
@@ -94,11 +96,11 @@ float Ultrasonic_Distance(void)
             TRIG_Send = 0;  //超声波模块已开始发送8个40khz脉冲
         }
 
-        while(ECHO_Reci == 0);   //若ECHO_Reci为低电平，则一直循环，直到为高电平。  
+        while(ECHO_Recieve == 0);   //若ECHO_Recieve为低电平，则一直循环，直到为高电平。  
 
         OpenTimerForHc();       //此时说明检测到高电平，开启定时器，开始计时。       
 
-        while(ECHO_Reci == 1); //若ECHO_Reci为高电平，则一直循环，直到为低电平。 
+        while(ECHO_Recieve == 1); //若ECHO_Recieve为高电平，则一直循环，直到为低电平。 
 
         CloseTimerForHc();   //此时说明检测到低电平，关闭定时器，停止计时 
 

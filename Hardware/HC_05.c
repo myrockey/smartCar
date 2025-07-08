@@ -1,3 +1,4 @@
+#include "stm32f10x.h"                  // Device header
 #include "HC_05.h"
 #include "Serial.h"
 

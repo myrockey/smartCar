@@ -1,3 +1,4 @@
+#include "stm32f10x.h"                  // Device header
 #include "SmartCar.h"
 #include "Motor.h"
 

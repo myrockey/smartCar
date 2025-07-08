@@ -1,8 +1,6 @@
 #ifndef __SMARTCAR_H
 #define __SMARTCAR_H
 
-#include "stm32f10x.h"                  // Device header
-
 void SmartCar_Init(void);
 //向前
 void Move_Forward(void);
