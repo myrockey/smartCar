@@ -5,7 +5,7 @@
 
 //三路循迹
 #define   R   GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3)
-#define   M    GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_4) 
+#define   M   GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_4) 
 #define   L   GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_5) 
 
 void Tracking_Init(void);

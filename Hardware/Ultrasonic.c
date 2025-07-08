@@ -77,7 +77,7 @@ uint32_t GetEchoTimer(void)
 }
 
 //通过定时器3计数器值推算距离
-float Ultrasonic_GetLength(void )
+float Ultrasonic_Distance(void)
 {
    uint32_t t = 0;
    int i = 0;

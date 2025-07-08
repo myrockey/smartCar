@@ -3,10 +3,11 @@
 #include "OLED.h"
 #include "Delay.h"
 #include "SmartCar.h"
-#include "Serial.h"
+#include "HC_05.h"
 #include "tracking.h"
 #include "Buzzer.h"
 #include "LED.h"
+#include "ASRPRO.h"
 
 uint8_t RxData;//串口接收数据的变量
 int tmp;//记录循迹位置值的变量
@@ -18,17 +19,18 @@ int main(void)
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);//配置NVIC中断为分组4
 	OLED_Init();//显示屏初始化
 	SmartCar_Init();//电机驱动初始化
-	Serial_Init();//蓝牙初始化
+	HC_05_Init();//蓝牙初始化
 	Ultrasonic_Init();//超声波初始化
 	Tracking_Init();//循迹初始化
 	Buzzer_Init();//蜂鸣器初始化
-	LED_Init();
+	LED_Init();//LED初始化
+	ASRPRO_Init();//天问语音识别初始化
 
 	while(1)
 	{
 		tmp = (L * 100)+ (M * 10) + (R * 1);
 
-		distance = Ultrasonic_GetLength();
+		distance = Ultrasonic_Distance();
         OLED_ShowNum(2,4,distance,3);
         OLED_ShowNum(3,4,tmp,5);
 		

@@ -86,12 +86,13 @@ void PWM_Init_Servo(void)
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;       //输出极性，选择为高，若选择极性为低，则输出高低电平取反
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;   //输出使能
 	TIM_OCInitStructure.TIM_Pulse = 0;								//初始的CCR值
-	TIM_OC4Init(TIM1, &TIM_OCInitStructure);                        //将结构体变量交给TIM_OC4Init，配置TIM2的输出比较通道3
+	TIM_OC4Init(TIM1, &TIM_OCInitStructure);                        //将结构体变量交给TIM_OC4Init，配置TIM2的输出比较通道4
 	
 	/*TIM使能*/
 	TIM_Cmd(TIM1, ENABLE);			//使能TIM1，定时器开始运行
 }
 
+/* TIM1 和 TIM2 各自的通道是独立的，能同时使用 通道1 */
 /**
   * 函    数：PWM设置CCR
   * 参    数：Compare 要写入的CCR的值，范围：0~100

@@ -15,7 +15,7 @@
 #define ECHO_Reci        PBin(1)
 
 void Ultrasonic_Init(void);
-float Ultrasonic_GetLength(void);
+float Ultrasonic_Distance(void);
 void Ultrasonic_Run(void);
 
 #endif
