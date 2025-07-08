@@ -1,5 +1,5 @@
 #include "tracking.h"
-#include "motor.h"
+#include "SmartCar.h"
 #include "Delay.h"
 
 extern int distance;
@@ -48,7 +48,7 @@ void Tracking_Run(void )
   if(distance > 20){
     if(L==1 && M==0 && R==1)
     {
-      Move_forward();
+      Move_Forward();
     }
     else if(L==1 && M==0 && R==0)
     {
@@ -71,7 +71,7 @@ void Tracking_Run(void )
       Clockwise_Rotation();
       Delay_ms(100);
       
-      stop();
+      Car_Stop();
       Delay_ms(500);	
     }
     else if(L==1 && M==1 && R==1)
@@ -79,7 +79,7 @@ void Tracking_Run(void )
       Clockwise_Rotation();
       Delay_ms(100);
       
-      stop();
+      Car_Stop();
       Delay_ms(500);	
     }
   }

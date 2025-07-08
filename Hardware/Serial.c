@@ -56,6 +56,50 @@ void Serial_Init_HC_05(void)
 	USART_Cmd(HC_05_USARTX, ENABLE);								//使能USART1，串口开始运行
 }
 
+void Serial_Init_ESP8266(void)
+{
+	/* 定义GPIO、NVIC和USART初始化的结构体 */
+    GPIO_InitTypeDef GPIO_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+    USART_InitTypeDef USART_InitStructure;
+    /* 使能GPIO和USART的时钟 */
+    ESP8266_GPIO_APBX(ESP8266_GPIO_CLK,ENABLE);
+    ESP8266_APBX(ESP8266_CLK,ENABLE);
+
+    /* 将USART TX 的GPIO设置为推挽复用模式 */
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Pin = ESP8266_TX_GPIO_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(ESP8266_GPIO_PORT,&GPIO_InitStructure);
+    /* 将USART RX 的GPIO设置为浮空输入模式 */
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_InitStructure.GPIO_Pin = ESP8266_RX_GPIO_PIN;
+    GPIO_Init(ESP8266_GPIO_PORT,&GPIO_InitStructure);
+
+    /* 配置串口 */
+    USART_InitStructure.USART_BaudRate = 9600;                                        //波特率了设置为9600
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;   //不使用硬件流控制
+    USART_InitStructure.USART_Mode = USART_Mode_Tx|USART_Mode_Rx;                     //使能接收和发送
+    USART_InitStructure.USART_Parity = USART_Parity_No;                               //不使用奇偶校验位
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;                            //1位停止位
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;                       //字长设置为8位
+    USART_Init(ESP8266_USARTX, &USART_InitStructure);   
+
+    /* Usart NVIC配置 */
+    //NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);                 //设置NVIC中断分组2
+    NVIC_InitStructure.NVIC_IRQChannel = ESP8266_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+    NVIC_Init(&NVIC_InitStructure);
+
+    /*初始化串口，开启串口接收中断 */
+    USART_ITConfig(ESP8266_USARTX,USART_IT_RXNE,ENABLE);
+
+    /* 使能串口 */
+    USART_Cmd(ESP8266_USARTX,ENABLE);
+}
+
 void Serial_Init_ASRPRO(void)
 {
     /* 定义GPIO、NVIC和USART初始化的结构体 */
@@ -240,6 +284,20 @@ void HC_05_IRQHandler(void)
 																//读取数据寄存器会自动清除此标志位
 																//如果已经读取了数据寄存器，也可以不执行此代码
 	}
+}
+
+/* USART2中断函数 */
+void ESP8266_IRQHandler(void)
+{
+    uint8_t ucTemp;                                         //接收数据
+    if(USART_GetITStatus(ESP8266_USARTX, USART_IT_RXNE) == SET)
+    {      
+		Serial_RxData = USART_ReceiveData(ESP8266_USARTX);				//读取数据寄存器，存放在接收的数据变量
+		Serial_RxFlag = 1;										//置接收标志位变量为1
+		USART_ClearITPendingBit(ESP8266_USARTX, USART_IT_RXNE);			//清除USART2的RXNE标志位
+																//读取数据寄存器会自动清除此标志位
+																//如果已经读取了数据寄存器，也可以不执行此代码
+    }
 }
 
 /* USART3中断函数 */

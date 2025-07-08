@@ -7,8 +7,7 @@
 
 #define Buzzer_GPIO_PORT    	GPIOA		                /* GPIO端口 */
 #define Buzzer_GPIO_CLK 	    RCC_APB2Periph_GPIOA		/* GPIO端口时钟 */
-#define Buzzer_GPIO_PIN	        GPIO_Pin_3	
-
+#define Buzzer_GPIO_PIN	        GPIO_Pin_15	
 
 #define Buzzer_OFF             GPIO_ResetBits(Buzzer_GPIO_PORT,Buzzer_GPIO_PIN)
 #define Buzzer_ON			   GPIO_SetBits(Buzzer_GPIO_PORT,Buzzer_GPIO_PIN)

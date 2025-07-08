@@ -119,11 +119,13 @@ void Exec_Function(uint8_t type, char str[])
 			strcpy(str, " sonic  ");
 			break;
 		case 10://LED ON
-			LED1_ON;LED2_ON;LED3_ON;
+			LED1_ON;
+			//LED2_ON;LED3_ON;
 			strcpy(str, " led on ");
 			break;
 		case 11://LED OFF
-			LED1_OFF;LED2_OFF;LED3_OFF;
+			LED1_OFF;
+			//LED2_OFF;LED3_OFF;
 			strcpy(str, " led off ");
 			break;
 		case 12://Buzzer ON
