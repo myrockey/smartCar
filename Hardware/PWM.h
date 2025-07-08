@@ -9,10 +9,6 @@
 #define TB6612_GPIO_PORT    	 GPIOA		                /* GPIO端口 */
 #define TB6612_GPIO_PIN_PWMA  GPIO_Pin_1
 #define TB6612_GPIO_PIN_PWMB  GPIO_Pin_2
-#define TB6612_GPIO_PIN_AIN1 GPIO_Pin_4
-#define TB6612_GPIO_PIN_AIN2 GPIO_Pin_5
-#define TB6612_GPIO_PIN_BIN1 GPIO_Pin_6
-#define TB6612_GPIO_PIN_BIN2 GPIO_Pin_7
 #define TB6612_TIM    	     TIM2		                /* 定时器2 */
 
 // 配置舵机 SG90
