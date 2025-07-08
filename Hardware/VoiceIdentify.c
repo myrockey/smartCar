@@ -1,16 +1,16 @@
 #include "stm32f10x.h"                  // Device header
-#include "ASRPRO.h"
+#include "VoiceIdentify.h"
 #include "Serial.h"
 
 // 示例参考：https://www.haohaodada.com/new/bbs/forum.php?mod=viewthread&tid=802
 // 语音识别模块 ASRPRO的PB7（TX）引脚接STM32的A10（RX）引脚，PC0（RX）引脚接STM32的A9（TX）引脚。
-void ASRPRO_Init(void)
+void VoiceIdentify_Init(void)
 {
 	Serial_Init_ASRPRO();
 }
 
 //发送数据
-void ASRPRO_SendString(char *String)
+void VoiceIdentify_SendString(char *String)
 {
 	Serial_SendString(ASRPRO_USARTX, String);
 }

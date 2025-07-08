@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-// 配置蓝牙模块
+// 配置蓝牙模块HC_05
 //使用宏定义容易修改串口
 #define HC_05_GPIO_PORT    	GPIOA		                /* GPIO端口 */
 #define HC_05_GPIO_APBX     RCC_APB2PeriphClockCmd
@@ -20,7 +20,7 @@
 #define HC_05_IRQn          USART1_IRQn
 #define HC_05_IRQHandler    USART1_IRQHandler
 
-// 配置天问语音识别模块
+// 配置天问语音识别模块ASRPRO
 #define ASRPRO_GPIO_PORT    GPIOB		                /* GPIO端口 */
 #define ASRPRO_GPIO_APBX    RCC_APB2PeriphClockCmd
 #define ASRPRO_GPIO_CLK 	RCC_APB2Periph_GPIOB		/* GPIO端口时钟 */
