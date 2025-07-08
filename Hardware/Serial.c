@@ -289,7 +289,6 @@ void HC_05_IRQHandler(void)
 /* USART2中断函数 */
 void ESP8266_IRQHandler(void)
 {
-    uint8_t ucTemp;                                         //接收数据
     if(USART_GetITStatus(ESP8266_USARTX, USART_IT_RXNE) == SET)
     {      
 		Serial_RxData = USART_ReceiveData(ESP8266_USARTX);				//读取数据寄存器，存放在接收的数据变量
@@ -303,7 +302,6 @@ void ESP8266_IRQHandler(void)
 /* USART3中断函数 */
 void ASRPRO_IRQHandler(void)
 {
-    uint8_t ucTemp;                                         //接收数据
     if(USART_GetITStatus(ASRPRO_USARTX, USART_IT_RXNE) == SET)
     {      
 		Serial_RxData = USART_ReceiveData(ASRPRO_USARTX);				//读取数据寄存器，存放在接收的数据变量
@@ -313,4 +311,6 @@ void ASRPRO_IRQHandler(void)
 																//如果已经读取了数据寄存器，也可以不执行此代码
     }
 }
+
+
 
