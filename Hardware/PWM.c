@@ -42,7 +42,7 @@ void PWM_Init_Motor(void)
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;   //输出使能
 	TIM_OCInitStructure.TIM_Pulse = 0;								//初始的CCR值
 	TIM_OC2Init(TB6612_TIM, &TIM_OCInitStructure);                        //将结构体变量交给TIM_OC2Init，配置TIM2的输出比较通道2
-	TIM_OC3Init(TB6612_TIM, &TIM_OCInitStructure);                        //将结构体变量交给TIM_OC3Init，配置TIM2的输出比较通道3
+	TIM_OC1Init(TB6612_TIM, &TIM_OCInitStructure);                        //将结构体变量交给TIM_OC1Init，配置TIM2的输出比较通道1
 	
 	/*TIM使能*/
 	TIM_Cmd(TB6612_TIM, ENABLE);			//使能TIM2，定时器开始运行
@@ -106,9 +106,9 @@ void PWM_SetCompare2_Motor(uint16_t Compare)
 	TIM_SetCompare2(TB6612_TIM, Compare);		//设置CCR2的值
 }
 
-void PWM_SetCompare3_Motor(uint16_t Compare)
+void PWM_SetCompare1_Motor(uint16_t Compare)
 {
-	TIM_SetCompare3(TB6612_TIM, Compare);		//设置CCR3的值
+	TIM_SetCompare1(TB6612_TIM, Compare);		//设置CCR4的值
 }
 
 void PWM_SetCompare4_Servo(uint16_t Compare)

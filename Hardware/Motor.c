@@ -51,20 +51,20 @@ void MotorRight_SetSpeed(int8_t Speed)
 		//假设为正转
 		GPIO_SetBits(TB6612_Motor_GPIO_PORT,TB6612_GPIO_PIN_BIN1);//置高电平
 		GPIO_ResetBits(TB6612_Motor_GPIO_PORT,TB6612_GPIO_PIN_BIN2);//置低电平
-		PWM_SetCompare3_Motor(Speed);
+		PWM_SetCompare1_Motor(Speed);
 	}
 	else if(Speed == 0)
 	{
 		//假设为正转
 		GPIO_SetBits(TB6612_Motor_GPIO_PORT,TB6612_GPIO_PIN_BIN1);//置高电平
 		GPIO_ResetBits(TB6612_Motor_GPIO_PORT,TB6612_GPIO_PIN_BIN2);//置低电平
-		PWM_SetCompare3_Motor(Speed);
+		PWM_SetCompare1_Motor(Speed);
 	}
 	else
 	{
 		//反之则为反转
 		GPIO_ResetBits(TB6612_Motor_GPIO_PORT,TB6612_GPIO_PIN_BIN1);//置低电平
 		GPIO_SetBits(TB6612_Motor_GPIO_PORT,TB6612_GPIO_PIN_BIN2);//置高电平
-		PWM_SetCompare3_Motor(-Speed);//PWM只能给正数
+		PWM_SetCompare1_Motor(-Speed);//PWM只能给正数
 	}
 }
