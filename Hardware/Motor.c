@@ -13,7 +13,7 @@ void Motor_Init(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA,&GPIO_InitStructure);
 	
-	PWM_Init();//初始化直流电机的底层PWM
+	PWM_Init_Motor();//初始化直流电机的底层PWM
 }
 
 //左边电机

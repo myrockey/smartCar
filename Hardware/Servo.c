@@ -3,7 +3,7 @@
 
 void Servo_Init(void)
 {
-	PWM_Init();
+	PWM_Init_Servo();
 }
 
 /*
