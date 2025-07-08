@@ -2,6 +2,8 @@
 #include "ASRPRO.h"
 #include "Serial.h"
 
+// 示例参考：https://www.haohaodada.com/new/bbs/forum.php?mod=viewthread&tid=802
+// 语音识别模块 ASRPRO的PB7（TX）引脚接STM32的A10（RX）引脚，PC0（RX）引脚接STM32的A9（TX）引脚。
 void ASRPRO_Init(void)
 {
 	Serial_Init_ASRPRO();
