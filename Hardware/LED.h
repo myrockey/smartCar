@@ -12,7 +12,7 @@
 
 #define LED2_GPIO_PORT    	GPIOA		          /* GPIO端口 */
 #define LED2_GPIO_CLK 	    RCC_APB2Periph_GPIOA		/* GPIO端口时钟 */
-#define LED2_GPIO_PIN		GPIO_Pin_11			        
+#define LED2_GPIO_PIN		GPIO_Pin_15			        
 
 #define LED3_GPIO_PORT    	GPIOA			              /* GPIO端口 */
 #define LED3_GPIO_CLK 	    RCC_APB2Periph_GPIOA		/* GPIO端口时钟 */
