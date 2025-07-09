@@ -43,7 +43,14 @@ int main(void)
 	while(1)
 	{
 		WIFI_Run();//WIFI运行
-		RxData = WIFI_Receive_Task();
+		RxData = WIFI_Receive_Task();//WIFI接收数据，并ping连接状态
+		//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
+		if(PING_MODE == 0)
+		{
+			printf("WIFI 未连接成功\r\n");
+			return;
+		}
+
 		WIFI_Send_Task();
 
 		// tmp = (L * 100)+ (M * 10) + (R * 1);
