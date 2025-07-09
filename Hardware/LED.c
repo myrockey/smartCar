@@ -45,4 +45,5 @@ void LED_Init(void)
 
 	// /*调用库函数，初始化GPIO*/
 	// GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStructure);
+	LED1_OFF;//默认关闭灯光
 }

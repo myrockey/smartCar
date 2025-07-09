@@ -11,10 +11,10 @@
 #include "Bluetooth.h"
 #include "Ultrasonic.h"
 #include "WIFI.h"
-// #include "Tracking.h"
+#include "Tracking.h"
 // #include "Buzzer.h"
 #include "LED.h"
-// #include "VoiceIdentify.h"
+//#include "VoiceIdentify.h"
 
 cJSON* cjson_test = NULL;//json
 cJSON* cjson_params = NULL;
@@ -53,11 +53,11 @@ int main(void)
 
 		WIFI_Send_Task();
 
-		// tmp = (L * 100)+ (M * 10) + (R * 1);
+		tmp = (L * 100)+ (M * 10) + (R * 1);
 		distance = Ultrasonic_Distance();
 
         OLED_ShowNum(2,4,distance,3);
-        // OLED_ShowNum(3,4,tmp,3);
+        OLED_ShowNum(3,4,tmp,3);
 		
 		// 接收到数据
 		if(Serial_GetRxFlag() == 1)
@@ -92,7 +92,7 @@ void BSP_Init(void)
 	SmartCar_Init();//电机驱动初始化
 	Bluetooth_Init();//蓝牙初始化
 	Ultrasonic_Init();//超声波初始化
-	// Tracking_Init();//循迹初始化
+	Tracking_Init();//循迹初始化
 	// Buzzer_Init();//蜂鸣器初始化
 	LED_Init();//LED初始化
 	// VoiceIdentify_Init();//语音识别初始化
