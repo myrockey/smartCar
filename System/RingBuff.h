@@ -1,13 +1,18 @@
 #ifndef _RINGBUFF_H_INCLUDED
 #define _RINGBUFF_H_INCLUDED
 
-#define BUFFER_SIZE 1024        /* 环形缓冲区的大小 */
+#include "stm32f10x.h"
+#include "globals.h"
+#include "stdio.h"
+#include <string.h>
+
+#define BUFFER_SIZE 1024        /* 鐜舰缂撳啿鍖虹殑澶у皬 */
 
 typedef enum {
   CQ_STATUS_OK = 0,
   CQ_STATUS_IS_FULL,
   CQ_STATUS_IS_EMPTY,
-  CQ_STATUS_ERR    // 出错
+  CQ_STATUS_ERR    // 鍑洪敊
 } te_cicrleQueueStatus_t;
 
 

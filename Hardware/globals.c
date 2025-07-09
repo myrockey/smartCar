@@ -1,7 +1,7 @@
 #include "stm32f10x.h"
 #include "globals.h"
 
-//¿½±´Êı¾İ£¬²¢È¥³ı¿Õ×Ö·û
+//æ‹·è´æ•°æ®ï¼Œå¹¶å»é™¤ç©ºå­—ç¬¦
 void Filter_memcpy(uint8_t *dst, uint8_t *src, int size)
 {
     int i = 0;

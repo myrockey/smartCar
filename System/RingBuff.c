@@ -5,29 +5,29 @@
 
 RingBuff_t encoeanBuff;
 
-void RingBuff_Init(RingBuff_t *rb) //³õÊ¼»¯º¯Êý
+void RingBuff_Init(RingBuff_t *rb) //åˆå§‹åŒ–å‡½æ•°
 {
-  rb->Head = 0; //Í·Ö¸ÕëÖÃÓÚÆðÊ¼Î»
-  rb->Tail = 0; //Î²Ö¸ÕëÖÃÓÚÆðÊ¼Î»
-  rb->Length = 0; //¼ÆÂ¼µ±Ç°Êý¾Ý³¤¶È ÅÐ¶ÏÊÇ·ñ´æÓÐÊý¾Ý
+  rb->Head = 0; //å¤´æŒ‡é’ˆç½®äºŽèµ·å§‹ä½
+  rb->Tail = 0; //å°¾æŒ‡é’ˆç½®äºŽèµ·å§‹ä½
+  rb->Length = 0; //è®¡å½•å½“å‰æ•°æ®é•¿åº¦ åˆ¤æ–­æ˜¯å¦å­˜æœ‰æ•°æ®
   //memset(rb->Ring_Buff,0,sizeof(rb->Ring_Buff));
 }
 
 /**
- * @brief  ÅÐ¶Ï¶ÓÁÐÊÇ·ñÎª¿Õ
+ * @brief  åˆ¤æ–­é˜Ÿåˆ—æ˜¯å¦ä¸ºç©º
  * @note   
- * @param  *rb: ½á¹¹ÌåÖ¸Õë
- * @retval ·µ»Ø0ºÍ1,1´ú±í¿Õ£¬0´ú±í·Ç¿Õ
+ * @param  *rb: ç»“æž„ä½“æŒ‡é’ˆ
+ * @retval è¿”å›ž0å’Œ1,1ä»£è¡¨ç©ºï¼Œ0ä»£è¡¨éžç©º
  */
 te_cicrleQueueStatus_t RingBuff_IsEmpty(RingBuff_t *rb)
 {
   return (rb->Head == rb->Tail) ? CQ_STATUS_IS_EMPTY : CQ_STATUS_OK;
 }
 /**
- * @brief  ÅÐ¶Ï¶ÓÁÐÊÇ·ñÎªÂú
+ * @brief  åˆ¤æ–­é˜Ÿåˆ—æ˜¯å¦ä¸ºæ»¡
  * @note   
- * @param  *rb: ½á¹¹ÌåÖ¸Õë
- * @retval ·µ»Ø0ºÍ1,1´ú±íÂú£¬0´ú±í·ÇÂú
+ * @param  *rb: ç»“æž„ä½“æŒ‡é’ˆ
+ * @retval è¿”å›ž0å’Œ1,1ä»£è¡¨æ»¡ï¼Œ0ä»£è¡¨éžæ»¡
  */
 te_cicrleQueueStatus_t RingBuff_IsFull(RingBuff_t *rb)
 {
@@ -35,25 +35,25 @@ te_cicrleQueueStatus_t RingBuff_IsFull(RingBuff_t *rb)
 }
 
 /**
-  *¹¦ÄÜ£ºÊý¾ÝÐ´Èë»·ÐÎ»º³åÇø
-  *Èë²Î1£ºÒªÐ´ÈëµÄÊý¾Ý
-  *Èë²Î2£ºbufferÖ¸Õë
-  *·µ»ØÖµ£ºbufferÊÇ·ñÒÑÂú
+  *åŠŸèƒ½ï¼šæ•°æ®å†™å…¥çŽ¯å½¢ç¼“å†²åŒº
+  *å…¥å‚1ï¼šè¦å†™å…¥çš„æ•°æ®
+  *å…¥å‚2ï¼šbufferæŒ‡é’ˆ
+  *è¿”å›žå€¼ï¼šbufferæ˜¯å¦å·²æ»¡
   */
 uint8_t Write_RingBuff(RingBuff_t *ringBuff , uint8_t data)
 {
-    //½«µ¥×Ö½ÚÊý¾Ý´æÈëµ½»·ÐÎbufferµÄtailÎ²²¿
+    //å°†å•å­—èŠ‚æ•°æ®å­˜å…¥åˆ°çŽ¯å½¢bufferçš„tailå°¾éƒ¨
 	ringBuff->Ring_Buff[ringBuff->Tail]=data;    
-    //ÖØÐÂÖ¸¶¨»·ÐÎbufferµÄÎ²²¿µØÖ·£¬·ÀÖ¹Ô½½ç·Ç·¨·ÃÎÊ
+    //é‡æ–°æŒ‡å®šçŽ¯å½¢bufferçš„å°¾éƒ¨åœ°å€ï¼Œé˜²æ­¢è¶Šç•Œéžæ³•è®¿é—®
 	ringBuff->Tail = ( ringBuff->Tail + 1 ) % BUFFER_SIZE;
-    //´æÈëÒ»¸ö×Ö½ÚÊý¾Ý³É¹¦£¬len¼Ó1 
+    //å­˜å…¥ä¸€ä¸ªå­—èŠ‚æ•°æ®æˆåŠŸï¼ŒlenåŠ 1 
 	ringBuff->Length++;    
-	if(ringBuff->Length >= BUFFER_SIZE) //ÅÐ¶Ï»º³åÇøÊÇ·ñÒÑÂú
+	if(ringBuff->Length >= BUFFER_SIZE) //åˆ¤æ–­ç¼“å†²åŒºæ˜¯å¦å·²æ»¡
 	{
-		//Èç¹ûbuffer±¬µôÁË£¬Çå¿Õbuffer£¬½øÐÐÖØÐÂ³õÊ¼»¯   ²»³õÊ¼»¯£¬»á¸´Î»ËÀ»ú
+		//å¦‚æžœbufferçˆ†æŽ‰äº†ï¼Œæ¸…ç©ºbufferï¼Œè¿›è¡Œé‡æ–°åˆå§‹åŒ–   ä¸åˆå§‹åŒ–ï¼Œä¼šå¤ä½æ­»æœº
 		// memset(ringBuff, 0, BUFFER_SIZE);
 		// RingBuff_Init(&ringBuff);
-		printf("»º³åÇøÒÑÂú\r\n");
+		printf("ç¼“å†²åŒºå·²æ»¡\r\n");
 		ringBuff->Length = BUFFER_SIZE;
 		ringBuff->Head = ( ringBuff->Tail + 1 ) % BUFFER_SIZE;
 		//return 1;
@@ -62,26 +62,26 @@ uint8_t Write_RingBuff(RingBuff_t *ringBuff , uint8_t data)
 }
 
 /**
-  *¹¦ÄÜ£º¶ÁÈ¡»º´æÇøÕûÖ¡Êý¾Ý-µ¥×Ö½Ú¶ÁÈ¡
-  *Èë²Î1£º´æ·ÅÌáÈ¡Êý¾ÝµÄÖ¸Õë
-  *Èë²Î2£º»·ÐÎÇøbufferÖ¸Õë
-  *·µ»ØÖµ£ºÊÇ·ñ³É¹¦ÌáÈ¡Êý¾Ý
+  *åŠŸèƒ½ï¼šè¯»å–ç¼“å­˜åŒºæ•´å¸§æ•°æ®-å•å­—èŠ‚è¯»å–
+  *å…¥å‚1ï¼šå­˜æ”¾æå–æ•°æ®çš„æŒ‡é’ˆ
+  *å…¥å‚2ï¼šçŽ¯å½¢åŒºbufferæŒ‡é’ˆ
+  *è¿”å›žå€¼ï¼šæ˜¯å¦æˆåŠŸæå–æ•°æ®
   */
 uint8_t Read_RingBuff_Byte(RingBuff_t *ringBuff , uint8_t *rData)
 {
-	if(ringBuff->Length == 0)//ÅÐ¶Ï·Ç¿Õ
+	if(ringBuff->Length == 0)//åˆ¤æ–­éžç©º
 	{
 		return 1;
 	}
 		
-    //ÏÈ½øÏÈ³öFIFO£¬´Ó»º³åÇøÍ·³ö£¬½«Í·Î»ÖÃÊý¾ÝÈ¡³ö
+    //å…ˆè¿›å…ˆå‡ºFIFOï¼Œä»Žç¼“å†²åŒºå¤´å‡ºï¼Œå°†å¤´ä½ç½®æ•°æ®å–å‡º
 	*rData = ringBuff->Ring_Buff[ringBuff->Head];
-    //½«È¡³öÊý¾ÝµÄÎ»ÖÃ£¬Êý¾ÝÇåÁã
+    //å°†å–å‡ºæ•°æ®çš„ä½ç½®ï¼Œæ•°æ®æ¸…é›¶
 	ringBuff->Ring_Buff[ringBuff->Head] = 0;
 				
-	//ÖØÐÂÖ¸¶¨bufferÍ·µÄÎ»ÖÃ£¬·ÀÖ¹Ô½½ç·Ç·¨·ÃÎÊ
+	//é‡æ–°æŒ‡å®šbufferå¤´çš„ä½ç½®ï¼Œé˜²æ­¢è¶Šç•Œéžæ³•è®¿é—®
 	ringBuff->Head = (ringBuff->Head + 1) % BUFFER_SIZE;
-    //È¡³öÒ»¸ö×Ö½ÚÊý¾Ýºó£¬½«Êý¾Ý³¤¶È¼õ1
+    //å–å‡ºä¸€ä¸ªå­—èŠ‚æ•°æ®åŽï¼Œå°†æ•°æ®é•¿åº¦å‡1
 	ringBuff->Length--;
 	
 	return 0;
@@ -89,7 +89,7 @@ uint8_t Read_RingBuff_Byte(RingBuff_t *ringBuff , uint8_t *rData)
 
 
 /*
-´Ó»·ÐÎ»º³åÇø¶Á¶à¸ö×Ö½Ú
+ä»ŽçŽ¯å½¢ç¼“å†²åŒºè¯»å¤šä¸ªå­—èŠ‚
 */
 te_cicrleQueueStatus_t RingBuff_ReadNByte(RingBuff_t *pRingBuff, uint8_t *pData, int size)
 {
@@ -104,7 +104,7 @@ te_cicrleQueueStatus_t RingBuff_ReadNByte(RingBuff_t *pRingBuff, uint8_t *pData,
 	return CQ_STATUS_OK;
 }
 
-//Ïò»·ÐÎ»º³åÇøÐ´¶à¸ö×Ö½Ú
+//å‘çŽ¯å½¢ç¼“å†²åŒºå†™å¤šä¸ªå­—èŠ‚
 te_cicrleQueueStatus_t RingBuff_WriteNByte(RingBuff_t *pRingBuff, uint8_t *pData, int size)
 {
 	int i = 0;
@@ -119,7 +119,7 @@ te_cicrleQueueStatus_t RingBuff_WriteNByte(RingBuff_t *pRingBuff, uint8_t *pData
 }
 
 
-//»ñÈ¡µ±Ç°»·ÐÎ»º³åÇøÖÐÊý¾Ý³¤¶È
+//èŽ·å–å½“å‰çŽ¯å½¢ç¼“å†²åŒºä¸­æ•°æ®é•¿åº¦
 int RingBuff_GetLen(RingBuff_t *pRingBuff)
 {
 	if(NULL == pRingBuff)
@@ -137,7 +137,7 @@ uint16_t RQBuff_GetBuffLenth(RingBuff_t* RQ_Buff) {
 	return RQ_Buff->Length;
 }
 
-//»ñÈ¡µ±Ç°Í·²¿Êý¾Ý
+//èŽ·å–å½“å‰å¤´éƒ¨æ•°æ®
 unsigned char RingBuff_GetHeadItem(RingBuff_t *pRingBuff)
 {
 	if(NULL == pRingBuff)
@@ -146,7 +146,7 @@ unsigned char RingBuff_GetHeadItem(RingBuff_t *pRingBuff)
 	return pRingBuff->Ring_Buff[pRingBuff->Head];
 }
 
-//»ñÈ¡Ö¸¶¨ÏÂ±êÊý¾Ý
+//èŽ·å–æŒ‡å®šä¸‹æ ‡æ•°æ®
 unsigned char RingBuff_GetIndexItem(RingBuff_t *pRingBuff, int index)
 {
 	if(NULL == pRingBuff || index > BUFFER_SIZE-1)
