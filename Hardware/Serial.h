@@ -65,11 +65,12 @@
 #define ASRPRO_IRQHandler   USART3_IRQHandler
 
 // 调试（fputc重写 使用 printf输出日志），切换使用的USART 
-#define USE_USARTX ASRPRO_USARTX
+#define USE_USARTX HC_05_USARTX
 
 void Serial_Init_HC_05(void);
 void Serial_Init_ESP8266(void);
 void Serial_DMA_Init_ESP8266(uint8_t * rxBuffer);
+void USART2_DMA_SendData(uint8_t *pData, uint16_t Size);
 void Serial_Init_ASRPRO(void);
 void Serial_SendByte(USART_TypeDef * pUSARTx, uint8_t Byte);
 void Serial_SendArray(USART_TypeDef * pUSARTx, uint8_t *Array, uint16_t Length);//uint8_t = char 

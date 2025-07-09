@@ -2,32 +2,18 @@
 #include "WIFI.h"
 #include "Timer.h"
 #include "RingBuff.h"
+#include "Delay.h"
 
 volatile char WIFI_CONNECT = 0;//服务器连接模式，1-表示已连接，0表示未连接
 volatile char PING_MODE = 0;//ping心跳包发送模式，1表示开启30s发送模式，0表示未开启发送或开启2s快速发送模式。
 volatile char pingFlag = 0;       //ping报文状态       0：正常状态，等待计时时间到，发送Ping报文
                          //ping报文状态       1：Ping报文已发送，当收到 服务器回复报文的后 将1置为0
-volatile char WIFI_Receive_Flag = 0;// WIFI接收到数据标志
+uint8_t WIFI_Receive_Flag = 0;// WIFI接收到数据标志
 uint8_t g_rx_esp8266_buf[WIFI_RX_BUFFER_SIZE] = {0};
 volatile uint32_t g_rx_esp8266_cnt = 0;// 当前接收的字节数
 
 uint8_t g_rx_dma_buf[USART2_DMA_RX_BUFFER_SIZE] = {0};//DMA接收数据缓冲区
 volatile uint32_t g_rx_dma_cnt = 0;// 当前接收的字节数
-
-void WIFI_Init(void)
-{
-	//Serial_Init_ESP8266(g_rx_dma_buf);
-	Serial_DMA_Init_ESP8266(g_rx_dma_buf);
-	WIFI_Reset_IO_Init();
-	RingBuff_Init(&encoeanBuff);//环形缓冲区初始化
-}
-
-//发送数据
-void WIFI_SendString(char *String)
-{
-	//Serial_SendString(ESP8266_USARTX, String);
-	USART2_DMA_SendData((uint8_t*)String, strlen(String));//使用DMA方式发送
-}
 
 /*函数名：初始化WiFi的复位IO                       */
 /*参  数：无                                       */
@@ -43,6 +29,21 @@ void WIFI_Reset_IO_Init(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;   	    //推免输出方式
 	GPIO_Init(ESP8266_RESET_GPIO_PORT, &GPIO_InitStructure);  	    
 	RESET_IO(1);                                            //复位IO拉高电平
+}
+
+void WIFI_Init(void)
+{
+	//Serial_Init_ESP8266(g_rx_dma_buf);
+	Serial_DMA_Init_ESP8266(g_rx_dma_buf);
+	WIFI_Reset_IO_Init();
+	RingBuff_Init(&encoeanBuff);//环形缓冲区初始化
+}
+
+//发送数据
+void WIFI_SendString(char *String)
+{
+	//Serial_SendString(ESP8266_USARTX, String);
+	USART2_DMA_SendData((uint8_t*)String, strlen(String));//使用DMA方式发送
 }
 
 //清空接收缓存区
@@ -286,36 +287,6 @@ char ESP8266_MQTT_Subscribe(void) {
     char cmd_buffer[CMD_BUFFER_SIZE];
     snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+MQTTSUB=0,\"%s\",0\r\n", MQTT_COMMAND_SUB);
     return ESP8266_WiFi_SendCmd(cmd_buffer,"OK",20);
-}
-
-/*
-@函数名：WIFI_Run
-@功能说明：WIFI运行并心跳检测，断开自动重连
-@参数：
-@返回值：无
-*/
-void WIFI_Run(void)
-{
-	//服务器或者wifi已断开，清除事件标志，继续执行本任务，重新连接
-	if(WIFI_CONNECT != 1)
-	{
-		printf("需要连接服务器\r\n");                 
-		TIM_Cmd(WIFI_TIM, DISABLE);                       //关闭TIM3
-		PING_MODE = 0;//关闭发送PING包的定时器3，清除事件标志位
-		ESP8266_Buf_Clear();//清空接收缓存区
-		if(ESP8266_WiFi_MQTT_Connect_IoTServer() == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
-		{   			     
-			printf("WIFI及MQTT服务器连接并订阅成功\r\n");            
-			ESP8266_Buf_Clear();//清空接收缓存区
-
-			WIFI_CONNECT = 1;  //服务器已连接，抛出事件标志 
-
-			//启动定时器30s模式
-			TIM_WIFI_ENABLE_30S();
-			pingFlag = 0;
-			PING_MODE = 1; //30s的PING定时器，设置事件标志位
-		}
-	}
 }
 
 /* USART2中断函数 */

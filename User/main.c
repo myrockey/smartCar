@@ -6,6 +6,7 @@
 #include "OLED.h"
 #include "Delay.h"
 #include "RingBuff.h"
+#include "Timer.h"
 #include "SmartCar.h"
 // #include "Serial.h"
 #include "Bluetooth.h"
@@ -34,7 +35,9 @@ void Exec_Function(uint8_t type, char str[]);
 //根据参数，播报语音
 void Voice_broadcast(uint8_t type);
 
-uint8_t WIFI_Receive_Task(void);
+void WIFI_Run(void);
+int8_t WIFI_Receive_Task(void);
+void WIFI_Send_Task(void);
 
 int main(void)
 {
@@ -48,7 +51,8 @@ int main(void)
 		if(PING_MODE == 0)
 		{
 			printf("WIFI 未连接成功\r\n");
-			return;
+			OLED_ShowString(1,4,"wifiERROR");
+			return -1;
 		}
 
 		WIFI_Send_Task();
@@ -95,6 +99,7 @@ void BSP_Init(void)
 	Tracking_Init();//循迹初始化
 	// Buzzer_Init();//蜂鸣器初始化
 	LED_Init();//LED初始化
+	WIFI_Init();
 	// VoiceIdentify_Init();//语音识别初始化
 }
 
@@ -181,6 +186,39 @@ void Exec_Function(uint8_t type, char str[])
 //}
 
 /*
+@函数名：WIFI_Run
+@功能说明：WIFI运行并心跳检测，断开自动重连
+@参数：
+@返回值：无
+*/
+void WIFI_Run(void)
+{
+	char temp;
+	//服务器或者wifi已断开，清除事件标志，继续执行本任务，重新连接
+	if(WIFI_CONNECT != 1)
+	{
+		printf("需要连接服务器\r\n");                 
+		TIM_Cmd(WIFI_TIM, DISABLE);                       //关闭TIM3
+		PING_MODE = 0;//关闭发送PING包的定时器3，清除事件标志位
+		ESP8266_Buf_Clear();//清空接收缓存区
+		temp = ESP8266_WiFi_MQTT_Connect_IoTServer();
+		OLED_ShowNum(1,1,temp,2);
+		if( temp == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
+		{   			     
+			printf("WIFI及MQTT服务器连接并订阅成功\r\n");            
+			ESP8266_Buf_Clear();//清空接收缓存区
+
+			WIFI_CONNECT = 1;  //服务器已连接，抛出事件标志 
+
+			//启动定时器30s模式
+			TIM_WIFI_ENABLE_30S();
+			pingFlag = 0;
+			PING_MODE = 1; //30s的PING定时器，设置事件标志位
+		}
+	}
+}
+
+/*
 @函数名：Send_Task
 @功能说明：Send_Task任务主体
 @参数：
@@ -195,14 +233,14 @@ void WIFI_Send_Task(void)
 	}
 
 	//读取温度值
-	float temperature = Thermistor_Read_Temperature();
+	float temperature = 22.5;//TODO:读取DHT11温度模块
 
 	char message[CMD_BUFFER_SIZE] = {0};
 	snprintf(message,sizeof(message),"{\\\"temperature\\\": %.2f}",temperature);	
 	ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
 }
 
-uint8_t WIFI_Receive_Task(void)
+int8_t WIFI_Receive_Task(void)
 {
 	uint8_t res = 0;
 	//服务器连接事件发生执行此任务，否则挂起
@@ -216,6 +254,7 @@ uint8_t WIFI_Receive_Task(void)
 	{
 		return res;
 	}
+	WIFI_Receive_Flag = 0;
 
 	int len;
 	//printf("KEY_Task Running\r\n");
@@ -238,7 +277,7 @@ uint8_t WIFI_Receive_Task(void)
 			else if(pingFlag > 1)	
 			{ 				 								 //如果pingFlag>1，表示是多次发送了，而且是2s间隔的快速发送
 				pingFlag = 0;     				      		 //要清除pingFlag标志
-				TIM3_ENABLE_30S(); 				      		 //PING定时器重回30s的时间
+				TIM_WIFI_ENABLE_30S(); 				      		 //PING定时器重回30s的时间
 				PING_MODE = 1; //30s的PING定时器，设置事件标志位
 			}
 		}
@@ -247,7 +286,7 @@ uint8_t WIFI_Receive_Task(void)
 		if(strstr((const char*)received_str, "getValue") != NULL && strstr((const char*)received_str, "state") != NULL){
 			printf("服务器下发的数据:%s \r\n",received_str); 		   	 //串口输出信息
 			/* 解析整段JSO数据 */
-			cjson_test = cJSON_Parse(received_str);
+			cjson_test = cJSON_Parse((const char*)received_str);
 			if(cjson_test == NULL)
 			{
 				printf("parse fail.\n");

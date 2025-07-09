@@ -16,6 +16,8 @@
 #define WIFI_TIM_IRQHandler TIM4_IRQHandler
 
 void TIM_Ultrasonic(void);
+void TIM_WIFI_ENABLE_30S(void);
+void TIM_WIFI_ENABLE_2S(void);
 
 #endif
 
