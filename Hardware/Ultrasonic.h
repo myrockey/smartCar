@@ -4,6 +4,7 @@
 #include "BitAction.h"
 
 //超声波模块
+#define Hcsr04_GPIO_APBX RCC_APB2PeriphClockCmd
 #define Hcsr04_GPIO_CLK  RCC_APB2Periph_GPIOB
 #define Hcsr04_GPIO      GPIOB
 #define TRIG_Pin         GPIO_Pin_0

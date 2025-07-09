@@ -1,29 +1,17 @@
 #include "stm32f10x.h"                  // Device header
+#include "Timer.h"
 #include "Ultrasonic.h"
 #include "motor.h"
 #include "Delay.h"
 
-uint16_t msHcCount = 0;//定时器计数
+uint16_t Hcsr04_Count = 0;//定时器计数
 extern int distance;//距障碍物距离
-
-//定时器3设置
-void ultrasonic_NVIC()
-{
-    NVIC_InitTypeDef NVIC_InitStructure;
-    //NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-    NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;             
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;  
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;         
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;       
-    NVIC_Init(&NVIC_InitStructure);
-}
 
 //IO口初始化 及其他初始化
 void Ultrasonic_Init(void)
 {  
-    TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;   
     GPIO_InitTypeDef GPIO_InitStructure;
-    RCC_APB2PeriphClockCmd(Hcsr04_GPIO_CLK, ENABLE);
+    Hcsr04_GPIO_APBX(Hcsr04_GPIO_CLK, ENABLE);
    
     GPIO_InitStructure.GPIO_Pin = TRIG_Pin;      
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -34,46 +22,32 @@ void Ultrasonic_Init(void)
     GPIO_InitStructure.GPIO_Pin = Echo_Pin;     
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(Hcsr04_GPIO, &GPIO_InitStructure);  
-    GPIO_ResetBits(Hcsr04_GPIO,Echo_Pin);    
+    GPIO_ResetBits(Hcsr04_GPIO,Echo_Pin);     
 
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);   
-
-    TIM_DeInit(TIM3);
-    TIM_TimeBaseStructure.TIM_Period = (1000-1); 
-    TIM_TimeBaseStructure.TIM_Prescaler = (72-1); 
-    TIM_TimeBaseStructure.TIM_ClockDivision= TIM_CKD_DIV1;
-    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  
-    TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);          
-        
-    TIM_ClearFlag(TIM3, TIM_FLAG_Update);  
-    TIM_ITConfig(TIM3,TIM_IT_Update,ENABLE);
-
-    ultrasonic_NVIC();
-    
-    TIM_Cmd(TIM3,DISABLE);     
+    TIM_Ultrasonic();
 }
 
 //打开定时器3
 static void OpenTimerForHc()  
 {
-   TIM_SetCounter(TIM3,0);
-   msHcCount = 0;
-   TIM_Cmd(TIM3, ENABLE); 
+   TIM_SetCounter(Ultrasonic_TIM,0);
+   Hcsr04_Count = 0;
+   TIM_Cmd(Ultrasonic_TIM, ENABLE); 
 }
 
 //关闭定时器3
 static void CloseTimerForHc()    
 {
-   TIM_Cmd(TIM3, DISABLE); 
+   TIM_Cmd(Ultrasonic_TIM, DISABLE); 
 }
 
 //获取定时器3计数器值
 uint32_t GetEchoTimer(void)
 {
    uint32_t t = 0;
-   t = msHcCount*1000;
-   t += TIM_GetCounter(TIM3);
-   TIM3->CNT = 0;  //计数器归零
+   t = Hcsr04_Count*1000;
+   t += TIM_GetCounter(Ultrasonic_TIM);
+   Ultrasonic_TIM->CNT = 0;  //计数器归零
    Delay_ms(50);
    return t;
 }
@@ -140,12 +114,12 @@ void Ultrasonic_Run(void)
 }
 
 //定时器3终中断
-void TIM3_IRQHandler(void)  
+void Ultrasonic_TIM_IRQHandler(void)  
 {
-   if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)  
+   if (TIM_GetITStatus(Ultrasonic_TIM, TIM_IT_Update) != RESET)  
    {
-       TIM_ClearITPendingBit(TIM3, TIM_IT_Update  ); 
-       msHcCount++; //计数器开始加
+       TIM_ClearITPendingBit(Ultrasonic_TIM, TIM_IT_Update  ); 
+       Hcsr04_Count++; //计数器开始加
    }
 }
  

@@ -1,15 +1,24 @@
 #include "stm32f10x.h"                  // Device header
+#include <stdio.h>
+#include <stdlib.h>
+#include "cJSON.h"
 #include <string.h>
 #include "OLED.h"
 #include "Delay.h"
+#include "RingBuff.h"
 #include "SmartCar.h"
-#include "Serial.h"
+// #include "Serial.h"
 #include "Bluetooth.h"
 #include "Ultrasonic.h"
-// #include "tracking.h"
+#include "WIFI.h"
+// #include "Tracking.h"
 // #include "Buzzer.h"
 #include "LED.h"
 // #include "VoiceIdentify.h"
+
+cJSON* cjson_test = NULL;//json
+cJSON* cjson_params = NULL;
+cJSON* cjson_params_state = NULL;
 
 uint8_t RxData;//串口接收数据的变量
 int tmp;//记录循迹位置值的变量
@@ -25,12 +34,18 @@ void Exec_Function(uint8_t type, char str[]);
 //根据参数，播报语音
 void Voice_broadcast(uint8_t type);
 
+uint8_t WIFI_Receive_Task(void);
+
 int main(void)
 {
 	BSP_Init();
 
 	while(1)
 	{
+		WIFI_Run();//WIFI运行
+		RxData = WIFI_Receive_Task();
+		WIFI_Send_Task();
+
 		// tmp = (L * 100)+ (M * 10) + (R * 1);
 		distance = Ultrasonic_Distance();
 
@@ -157,3 +172,87 @@ void Exec_Function(uint8_t type, char str[])
 //			break;
 //	}
 //}
+
+/*
+@函数名：Send_Task
+@功能说明：Send_Task任务主体
+@参数：
+@返回值：无
+*/
+void WIFI_Send_Task(void)
+{
+	//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
+	if(PING_MODE != 1)
+	{
+		return;
+	}
+
+	//读取温度值
+	float temperature = Thermistor_Read_Temperature();
+
+	char message[CMD_BUFFER_SIZE] = {0};
+	snprintf(message,sizeof(message),"{\\\"temperature\\\": %.2f}",temperature);	
+	ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
+}
+
+uint8_t WIFI_Receive_Task(void)
+{
+	uint8_t res = 0;
+	//服务器连接事件发生执行此任务，否则挂起
+	if(WIFI_CONNECT != 1)
+	{
+		return res;
+	}
+
+	//等待接收数据通知
+	if(WIFI_Receive_Flag != 1)
+	{
+		return res;
+	}
+
+	int len;
+	//printf("KEY_Task Running\r\n");
+	len = RingBuff_GetLen(&encoeanBuff);
+	if (len) {
+		uint8_t received_str[len+1];
+		RingBuff_ReadNByte(&encoeanBuff,received_str,len);
+		received_str[len] = '\0';
+		// 输出接收到的字符串
+		printf("Received: %s\n", received_str);
+
+		// ping状态，mqtt连接成功
+		//+MQTTCONN:0,6,1,"gz-3-mqtt.iot-api.com","1883","",1\r\n\r\nOK
+		if (strstr((const char*)received_str, "+MQTTCONN:0,6") != NULL && strstr((const char*)received_str, "OK") != NULL) {
+			printf("PING报文回复\r\n");                       
+			if(pingFlag == 1)
+			{                   						     //如果pingFlag=1，表示第一次发送
+				pingFlag = 0;    				       		 //要清除pingFlag标志
+			}
+			else if(pingFlag > 1)	
+			{ 				 								 //如果pingFlag>1，表示是多次发送了，而且是2s间隔的快速发送
+				pingFlag = 0;     				      		 //要清除pingFlag标志
+				TIM3_ENABLE_30S(); 				      		 //PING定时器重回30s的时间
+				PING_MODE = 1; //30s的PING定时器，设置事件标志位
+			}
+		}
+		
+		// 获取远程命令
+		if(strstr((const char*)received_str, "getValue") != NULL && strstr((const char*)received_str, "state") != NULL){
+			printf("服务器下发的数据:%s \r\n",received_str); 		   	 //串口输出信息
+			/* 解析整段JSO数据 */
+			cjson_test = cJSON_Parse(received_str);
+			if(cjson_test == NULL)
+			{
+				printf("parse fail.\n");
+				return -1;
+			}
+			/* 依次根据名称提取JSON数据（键值对） */
+			cjson_params = cJSON_GetObjectItem(cjson_test, "params");
+			cjson_params_state = cJSON_GetObjectItem(cjson_params, "state");
+			res = (uint8_t)cjson_params_state->valueint;
+			return res;
+		}
+	}
+
+	return res;
+}

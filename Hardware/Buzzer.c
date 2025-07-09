@@ -6,7 +6,8 @@ void Buzzer_Init(void)
 		GPIO_InitTypeDef GPIO_InitStructure;
 
 		/*开启LED相关的GPIO外设时钟*/
-		RCC_APB2PeriphClockCmd( Buzzer_GPIO_CLK , ENABLE);
+		Buzzer_GPIO_APBX( Buzzer_GPIO_CLK , ENABLE);
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);//开启AFIO复用时钟
 		/*选择要控制的GPIO引脚*/
 		GPIO_InitStructure.GPIO_Pin = Buzzer_GPIO_PIN;	
 
