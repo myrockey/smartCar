@@ -232,12 +232,13 @@ void WIFI_Send_Task(void)
 		return;
 	}
 
+	OLED_ShowNum(4,4,18,2);
 	//读取温度值
-	float temperature = 22.5;//TODO:读取DHT11温度模块
-
-	char message[CMD_BUFFER_SIZE] = {0};
-	snprintf(message,sizeof(message),"{\\\"temperature\\\": %.2f}",temperature);	
-	ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
+	// float temperature = 22.5;//TODO:读取DHT11温度模块
+	
+	// char message[CMD_BUFFER_SIZE] = {0};
+	// snprintf(message,sizeof(message),"{\\\"temperature\\\": %.2f}",temperature);	
+	// ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
 }
 
 int8_t WIFI_Receive_Task(void)
