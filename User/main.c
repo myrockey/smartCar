@@ -51,10 +51,10 @@ int main(void)
 		if(PING_MODE == 0)
 		{
 			printf("WIFI connect error\r\n");
-			OLED_ShowString(1,4,"wifiERROR");
+			OLED_ShowString(1,4,"wifi ERR");
 			continue;
 		}
-
+		OLED_ShowString(1,4,"wifi OK ");
 		WIFI_Send_Task();
 
 		tmp = (L * 100)+ (M * 10) + (R * 1);
