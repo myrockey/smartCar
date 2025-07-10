@@ -52,7 +52,7 @@ int main(void)
 		{
 			printf("WIFI 未连接成功\r\n");
 			OLED_ShowString(1,4,"wifiERROR");
-			return -1;
+			break;
 		}
 
 		WIFI_Send_Task();
@@ -203,7 +203,7 @@ void WIFI_Run(void)
 		ESP8266_Buf_Clear();//清空接收缓存区
 		temp = ESP8266_WiFi_MQTT_Connect_IoTServer();
 		OLED_ShowNum(1,1,temp,2);
-		if( temp == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
+		if(temp == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
 		{   			     
 			printf("WIFI及MQTT服务器连接并订阅成功\r\n");            
 			ESP8266_Buf_Clear();//清空接收缓存区
