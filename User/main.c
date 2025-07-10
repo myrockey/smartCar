@@ -52,7 +52,7 @@ int main(void)
 		{
 			printf("WIFI 未连接成功\r\n");
 			OLED_ShowString(1,4,"wifiERROR");
-			break;
+			continue;
 		}
 
 		WIFI_Send_Task();
