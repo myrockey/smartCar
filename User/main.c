@@ -50,7 +50,7 @@ int main(void)
 		//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
 		if(PING_MODE == 0)
 		{
-			printf("WIFI 未连接成功\r\n");
+			printf("WIFI connect error\r\n");
 			OLED_ShowString(1,4,"wifiERROR");
 			continue;
 		}
@@ -197,7 +197,7 @@ void WIFI_Run(void)
 	//服务器或者wifi已断开，清除事件标志，继续执行本任务，重新连接
 	if(WIFI_CONNECT != 1)
 	{
-		printf("需要连接服务器\r\n");                 
+		printf("wifi connecting...\r\n");                 
 		TIM_Cmd(WIFI_TIM, DISABLE);                       //关闭TIM3
 		PING_MODE = 0;//关闭发送PING包的定时器3，清除事件标志位
 		ESP8266_Buf_Clear();//清空接收缓存区
@@ -205,7 +205,7 @@ void WIFI_Run(void)
 		OLED_ShowNum(1,1,temp,2);
 		if(temp == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
 		{   			     
-			printf("WIFI及MQTT服务器连接并订阅成功\r\n");            
+			printf("wifi connect success and mqtt sub success\r\n");            
 			ESP8266_Buf_Clear();//清空接收缓存区
 
 			WIFI_CONNECT = 1;  //服务器已连接，抛出事件标志 
