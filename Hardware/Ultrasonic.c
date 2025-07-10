@@ -1,7 +1,7 @@
 #include "stm32f10x.h"                  // Device header
 #include "Timer.h"
 #include "Ultrasonic.h"
-#include "motor.h"
+#include "SmartCar.h"
 #include "Delay.h"
 
 uint16_t Hcsr04_Count = 0;//定时器计数
@@ -122,4 +122,3 @@ void Ultrasonic_TIM_IRQHandler(void)
        Hcsr04_Count++; //计数器开始加
    }
 }
- 
