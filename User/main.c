@@ -14,6 +14,7 @@
 #include "WIFI.h"
 #include "Tracking.h"
 // #include "Buzzer.h"
+#include "DHT11.h"
 #include "LED.h"
 //#include "VoiceIdentify.h"
 
@@ -22,9 +23,12 @@ cJSON* cjson_params = NULL;
 cJSON* cjson_params_state = NULL;
 
 uint8_t RxData;//串口接收数据的变量
-int tmp;//记录循迹位置值的变量
+uint8_t wifiState;//记录循迹位置值的变量
+uint8_t trackingVal;//记录循迹位置值的变量
 int distance;//离障碍物距离
-char str[20]; // 定义一个长度为20的字符数组作为字符串
+char temp;//温度
+char humi;//湿度
+char str[16]; // 定义一个长度为16的字符数组作为字符串
 
 //初始化
 void BSP_Init(void);
@@ -35,17 +39,21 @@ void Exec_Function(uint8_t type, char str[]);
 //根据参数，播报语音
 void Voice_broadcast(uint8_t type);
 
-void WIFI_Run(void);
+uint8_t WIFI_Run(void);
 int8_t WIFI_Receive_Task(void);
-void WIFI_Send_Task(void);
+void WIFI_Send_DHT(char *temp, char *humi);
 
 int main(void)
 {
 	BSP_Init();
 
+	OLED_ShowString(2,1,"D:");
+	OLED_ShowString(3,1,"J:");
+	OLED_ShowString(4,1,"T:");
 	while(1)
 	{
-		WIFI_Run();//WIFI运行
+		wifiState = WIFI_Run();//WIFI运行
+		OLED_ShowNum(1,1,wifiState,2);//显示wifi连接状态值
 		RxData = WIFI_Receive_Task();//WIFI接收数据，并ping连接状态
 		//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
 		if(PING_MODE == 0)
@@ -55,36 +63,35 @@ int main(void)
 			continue;
 		}
 		OLED_ShowString(1,4,"wifi OK ");
-		WIFI_Send_Task();
 
-		tmp = (L * 100)+ (M * 10) + (R * 1);
+		trackingVal = (L * 100)+ (M * 10) + (R * 1);
 		distance = Ultrasonic_Distance();
-
-        OLED_ShowNum(2,4,distance,3);
-        OLED_ShowNum(3,4,tmp,3);
+		OLED_ShowNum(2,4,distance,3);//显示超声波距离
+		OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 		
 		// 接收到数据
 		if(Serial_GetRxFlag() == 1)
 		{
 			RxData = Serial_GetRxData();
+			OLED_ShowNum(1,1,RxData,2);//显示接收的参数
 		}
 
 		Exec_Function(RxData, str);
-		OLED_ShowString(1,4,str);
+		OLED_ShowString(1,4,str);//显示执行的动作
 
 		//Voice_broadcast(RxData);
 		
 		//距离太近时
-		// if(distance < 10)
-        // {
-        //     Buzzer_OFF;
-        //     LED1_OFF;
-        // }
-        // if(distance > 10)
-        // {
-        //     Buzzer_ON;
-        //     LED1_ON;
-        // }
+		if(distance < 10)
+        {
+            //Buzzer_OFF;
+            LED1_OFF;
+        }
+        if(distance > 10)
+        {
+            //Buzzer_ON;
+            LED1_ON;
+        }
 
 	}
 }
@@ -98,6 +105,7 @@ void BSP_Init(void)
 	Ultrasonic_Init();//超声波初始化
 	Tracking_Init();//循迹初始化
 	// Buzzer_Init();//蜂鸣器初始化
+	DHT11_Init();
 	LED_Init();//LED初始化
 	WIFI_Init();
 	// VoiceIdentify_Init();//语音识别初始化
@@ -155,7 +163,16 @@ void Exec_Function(uint8_t type, char str[])
 		case 11://LED OFF
 			LED1_OFF;
 			//LED2_OFF;LED3_OFF;
-			strcpy(str, " led off ");
+			strcpy(str, " led off");
+			break;
+		case 12://读取温湿度
+			DHT11_Run();
+			DHT11_Read_Data(&temp, &humi);
+			sprintf(str," %d H:%d",temp,humi);
+			OLED_ShowString(4,4,str);
+			WIFI_Send_DHT(&temp,&humi);
+
+			strcpy(str, " dht11  ");
 			break;
 		// case 12://Buzzer ON
 		// 	Buzzer_ON;
@@ -191,9 +208,9 @@ void Exec_Function(uint8_t type, char str[])
 @参数：
 @返回值：无
 */
-void WIFI_Run(void)
+uint8_t WIFI_Run(void)
 {
-	char temp;
+	uint8_t temp;
 	//服务器或者wifi已断开，清除事件标志，继续执行本任务，重新连接
 	if(WIFI_CONNECT != 1)
 	{
@@ -202,7 +219,6 @@ void WIFI_Run(void)
 		PING_MODE = 0;//关闭发送PING包的定时器3，清除事件标志位
 		ESP8266_Buf_Clear();//清空接收缓存区
 		temp = ESP8266_WiFi_MQTT_Connect_IoTServer();
-		OLED_ShowNum(1,1,temp,2);
 		if(temp == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
 		{   			     
 			printf("wifi connect success and mqtt sub success\r\n");            
@@ -216,29 +232,27 @@ void WIFI_Run(void)
 			PING_MODE = 1; //30s的PING定时器，设置事件标志位
 		}
 	}
+
+	return temp;
 }
 
 /*
-@函数名：Send_Task
+@函数名：WIFI发送温湿度给服务器
 @功能说明：Send_Task任务主体
 @参数：
 @返回值：无
 */
-void WIFI_Send_Task(void)
+void WIFI_Send_DHT(char *temp, char *humi)
 {
 	//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
 	if(PING_MODE != 1)
 	{
 		return;
 	}
-
-	OLED_ShowNum(4,4,18,2);
-	//读取温度值
-	// float temperature = 22.5;//TODO:读取DHT11温度模块
-	
-	// char message[CMD_BUFFER_SIZE] = {0};
-	// snprintf(message,sizeof(message),"{\\\"temperature\\\": %.2f}",temperature);	
-	// ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
+	//读取DHT11温度模块
+	char message[CMD_BUFFER_SIZE] = {0};
+	snprintf(message,sizeof(message),"{\\\"temperature\\\": %d,\\\"humidity\\\": %d}",*temp,*humi);	
+	ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
 }
 
 int8_t WIFI_Receive_Task(void)
