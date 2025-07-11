@@ -340,6 +340,14 @@ int fputc(int ch, FILE *f)
 	return ch;
 }
 
+//重定向C库函数scanf到串口,重写向后可使用scanf、getchar等函数
+int fgetc(FILE *f)
+{
+    /* 等待串口输入数据 */
+    while(USART_GetFlagStatus(USE_USARTX,USART_FLAG_TXE)==RESET);
+    return (int)USART_ReceiveData(USE_USARTX);
+}
+
 /**
   * 函    数：自己封装的prinf函数
   * 参    数：format 格式化字符串
