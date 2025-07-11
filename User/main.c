@@ -166,7 +166,6 @@ void Exec_Function(uint8_t type, char str[])
 			strcpy(str, " led off");
 			break;
 		case 12://读取温湿度
-			DHT11_Run();
 			DHT11_Read_Data(&temp, &humi);
 			sprintf(str," %d H:%d",temp,humi);
 			OLED_ShowString(4,4,str);

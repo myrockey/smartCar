@@ -139,7 +139,7 @@ char DHT11_Read_Data(char *temp, char *humi)
  	char buf[5];                              //一次完整的数据有5个字节，定义一个缓冲区
 	
 	char i;                                   //定义一个变量用于for循环  
-	DHT11_Rst();                              //复位DHT11	
+	DHT11_Run();                              //复位DHT11	
 	if(DHT11_Check() == 0)				      //判断DHT11回复状态=0的话，表示正确，进入if
 	{
 		for(i = 0; i < 5; i++){               //一次完整的数据有5个字节，循环5次		
