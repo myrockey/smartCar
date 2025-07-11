@@ -84,13 +84,13 @@ int main(void)
 		//距离太近时
 		if(distance < 10)
         {
-            //Buzzer_OFF;
-            LED1_OFF;
-        }
-        if(distance > 10)
-        {
-            //Buzzer_ON;
+            // Buzzer_ON;
             LED1_ON;
+        }
+        else
+        {
+			// Buzzer_OFF;
+            LED1_OFF;
         }
 
 	}
