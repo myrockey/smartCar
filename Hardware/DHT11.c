@@ -54,9 +54,9 @@ void DHT11_Run(void)
 {                 
 	DHT11_IO_OUT(); 	//设置IO输出模式
 	DHT11_OUT(0); 	//拉低IO
-	delay_ms(30);     //拉低至少18ms，我们拉低30
+	Delay_ms(30);     //拉低至少18ms，我们拉低30
 	DHT11_OUT(1); 	//拉高IO
-	delay_us(30);     //主机拉高20~40us，我们拉高30us
+	Delay_us(30);     //主机拉高20~40us，我们拉高30us
 }
 
 /*-------------------------------------------------*/
@@ -73,14 +73,14 @@ char DHT11_Check(void)
     while((DHT11_DQ_IN == 1) && (timeout < 70))//DHT11会拉低40~50us,我们等待70us超时时间	
 	{	 
 		timeout++;                           //超时变量+1
-		delay_us(1);                       	 //延时1us
+		Delay_us(1);                       	 //延时1us
 	} 
 	if(timeout >= 70)return 1;               //如果timeout>=70,说明是因为超时退出的while循环，返回1表示错误
 	else timeout = 0;                        //反之，说明是因为等到了DHT11拉低IO，退出的while循环，正确并清零timeout
     while((DHT11_DQ_IN == 0) && (timeout < 70))//DHT11拉低后会再次拉高40~50us,,我们等待70us超时时间	
 	{ 		
 		timeout++;                           //超时变量+1
-		delay_us(1);                          
+		Delay_us(1);                          
 	}
 	if(timeout >= 70)return 2;               //如果timeout>=70,说明是因为超时退出的while循环，返回2表示错误  
 	return 0;                                //反之正确，返回0
@@ -98,15 +98,15 @@ char DHT11_Read_Bit(void)
 	while((DHT11_DQ_IN == 1) && (timeout < 40))//每一位数据开始，是12~14us的低电平，我们等40us
 	{   
 		timeout++;                             //超时变量+1
-		delay_us(1);                            
+		Delay_us(1);                            
 	}
 	timeout = 0;                               //清零timeout	
 	while((DHT11_DQ_IN == 0) && (timeout < 60))//接下来，DHT11会拉高IO，根据拉高的时间判断是0或1，我们等60us
 	{  
 		timeout++;                             //超时变量+1
-		delay_us(1);                            
+		Delay_us(1);                            
 	}
-	delay_us(35);                               
+	Delay_us(35);                               
 	if(DHT11_DQ_IN)return 1;                   //如果延时后，是高电平，那么本位接收的是1，返回1
 	else return 0;		                       //反之延时后，是低电平，那么本位接收的是0，返回0
 }
