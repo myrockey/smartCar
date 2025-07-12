@@ -19,12 +19,14 @@ void DHT11_Init(void)
 {
 	DHT11_GPIO_APBX(DHT11_GPIO_CLK, ENABLE); //使能PA端口时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO,ENABLE);//开启AFIO复用时钟
-
+	 
 	GPIO_InitTypeDef GPIO_InitStructure;                  //定义一个IO端口参数结构体
 	GPIO_InitStructure.GPIO_Pin =  DHT11_GPIO_PIN;            //准备设置引脚
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;     //速率50Mhz
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;   	  //推免输出方式
 	GPIO_Init(DHT11_GPIO_PORT, &GPIO_InitStructure);            	  //设置引脚
+	
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE); //关闭JTAG
 }
 
 void DHT11_IO_IN(void)
@@ -70,19 +72,19 @@ char DHT11_Check(void)
 	
 	timeout = 0;                             //超时变量清零    
 	DHT11_IO_IN();                           //IO设置输入模式
-    while((DHT11_DQ_IN == 1) && (timeout < 70))//DHT11会拉低40~50us,我们等待70us超时时间	
+    while((DHT11_DQ_IN == 1) && (timeout < 100))//DHT11会拉低40~50us,我们等待70us超时时间	
 	{	 
 		timeout++;                           //超时变量+1
 		Delay_us(1);                       	 //延时1us
 	} 
-	if(timeout >= 70)return 1;               //如果timeout>=70,说明是因为超时退出的while循环，返回1表示错误
+	if(timeout >= 100)return 1;               //如果timeout>=70,说明是因为超时退出的while循环，返回1表示错误
 	else timeout = 0;                        //反之，说明是因为等到了DHT11拉低IO，退出的while循环，正确并清零timeout
-    while((DHT11_DQ_IN == 0) && (timeout < 70))//DHT11拉低后会再次拉高40~50us,,我们等待70us超时时间	
+    while((DHT11_DQ_IN == 0) && (timeout < 100))//DHT11拉低后会再次拉高40~50us,,我们等待70us超时时间	
 	{ 		
 		timeout++;                           //超时变量+1
 		Delay_us(1);                          
 	}
-	if(timeout >= 70)return 2;               //如果timeout>=70,说明是因为超时退出的while循环，返回2表示错误  
+	if(timeout >= 100)return 2;               //如果timeout>=70,说明是因为超时退出的while循环，返回2表示错误  
 	return 0;                                //反之正确，返回0
 }
 /*-------------------------------------------------*/
@@ -145,11 +147,18 @@ char DHT11_Read_Data(char *temp, char *humi)
 		for(i = 0; i < 5; i++){               //一次完整的数据有5个字节，循环5次		
 			buf[i] = DHT11_Read_Byte();       //每次读取一个字节
 		}
+		/*
+		[0] 湿度整数
+		[1] 湿度小数（始终 0）
+		[2] 温度整数
+		[3] 温度小数（始终 0）
+		[4] 校验和
+		*/
 		if((buf[0] + buf[1] + buf[2] + buf[3]) == buf[4])//判断数据校验，前4个字节相加应该等于第5个字节，正确的话，进入if	
 		{     
-			//printf("%d\r\n",buf[0]); 	//温度数据
+			//printf("%d\r\n",buf[0]); 	//湿度数据
 			//printf("%d\r\n",buf[1]);
-			//printf("%d\r\n",buf[2]);	//湿度数据
+			//printf("%d\r\n",buf[2]);	//温度数据
 			//printf("%d\r\n",buf[3]);
 			//printf("%d\r\n",buf[4]);
 			*humi = buf[0];                   //湿度数据，保存在humi指针指向的地址变量中

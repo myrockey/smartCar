@@ -75,7 +75,7 @@ void PWM_Init_Servo(void)
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up; //计数器模式，选择向上计数
 	TIM_TimeBaseInitStructure.TIM_Period = 20000 - 1;                 //计数周期，即ARR的值
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 72 - 1;               //预分频器，即PSC的值
-	TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;            //重复计数器，高级定时器才会用到
+	//TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;            //重复计数器，高级定时器才会用到
 	TIM_TimeBaseInit(SG90_TIM, &TIM_TimeBaseInitStructure);             //将结构体变量交给TIM_TimeBaseInit，配置TIM1的时基单元
 
 	/*输出比较初始化*/ 
@@ -86,9 +86,15 @@ void PWM_Init_Servo(void)
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;               //输出比较模式，选择PWM模式1
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;       //输出极性，选择为高，若选择极性为低，则输出高低电平取反
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;   //输出使能
-	TIM_OCInitStructure.TIM_Pulse = 0;								//初始的CCR值
+	TIM_OCInitStructure.TIM_Pulse = 2500;								//初始的CCR值
 	TIM_OC4Init(SG90_TIM, &TIM_OCInitStructure);                        //将结构体变量交给TIM_OC4Init，配置TIM2的输出比较通道4
 	
+	TIM_OC1PreloadConfig(SG90_TIM, TIM_OCPreload_Enable);
+    TIM_ARRPreloadConfig(SG90_TIM, ENABLE);
+
+    /* 高级定时器需要使能主输出 */
+    TIM_CtrlPWMOutputs(SG90_TIM, ENABLE);
+
 	/*TIM使能*/
 	TIM_Cmd(SG90_TIM, ENABLE);			//使能TIM1，定时器开始运行
 }

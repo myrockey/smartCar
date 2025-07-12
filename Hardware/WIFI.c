@@ -3,6 +3,7 @@
 #include "Timer.h"
 #include "RingBuff.h"
 #include "Delay.h"
+#include "Serial.h"
 
 volatile char WIFI_CONNECT = 0;//服务器连接模式，1-表示已连接，0表示未连接
 volatile char PING_MODE = 0;//ping心跳包发送模式，1表示开启30s发送模式，0表示未开启发送或开启2s快速发送模式。

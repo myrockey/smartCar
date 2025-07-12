@@ -16,6 +16,7 @@
 // #include "Buzzer.h"
 #include "DHT11.h"
 #include "LED.h"
+#include "Servo.h"
 //#include "VoiceIdentify.h"
 
 cJSON* cjson_test = NULL;//json
@@ -24,7 +25,7 @@ cJSON* cjson_params_state = NULL;
 
 uint8_t RxData;//串口接收数据的变量
 uint8_t wifiState;//记录循迹位置值的变量
-uint8_t trackingVal;//记录循迹位置值的变量
+int trackingVal;//记录循迹位置值的变量
 int distance;//离障碍物距离
 char temp;//温度
 char humi;//湿度
@@ -50,10 +51,17 @@ int main(void)
 	OLED_ShowString(2,1,"D:");
 	OLED_ShowString(3,1,"J:");
 	OLED_ShowString(4,1,"T:");
+
 	while(1)
 	{
+		
+		//continue;
+		if(WIFI_CONNECT == 0)
+		{
+			OLED_ShowString(1,4,"wifi CON.");
+		}
 		wifiState = WIFI_Run();//WIFI运行
-		OLED_ShowNum(1,1,wifiState,2);//显示wifi连接状态值
+		OLED_ShowNum(1,1,(uint32_t)wifiState,2);//显示wifi连接状态值
 		RxData = WIFI_Receive_Task();//WIFI接收数据，并ping连接状态
 		//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
 		if(PING_MODE == 0)
@@ -62,10 +70,10 @@ int main(void)
 			OLED_ShowString(1,4,"wifi ERR");
 			continue;
 		}
-		OLED_ShowString(1,4,"wifi OK ");
+		//OLED_ShowString(1,4,"wifi OK ");
 
 		trackingVal = (L * 100)+ (M * 10) + (R * 1);
-		distance = Ultrasonic_Distance();
+		//distance = Ultrasonic_Distance();
 		OLED_ShowNum(2,4,distance,3);//显示超声波距离
 		OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 		
@@ -76,10 +84,10 @@ int main(void)
 			OLED_ShowNum(1,1,RxData,2);//显示接收的参数
 		}
 
+		//Voice_broadcast(RxData);
+		
 		Exec_Function(RxData, str);
 		OLED_ShowString(1,4,str);//显示执行的动作
-
-		//Voice_broadcast(RxData);
 		
 		//距离太近时
 		if(distance < 10)
@@ -92,7 +100,8 @@ int main(void)
 			// Buzzer_OFF;
             LED1_OFF;
         }
-
+		
+		RxData = 0;
 	}
 }
 
@@ -108,6 +117,7 @@ void BSP_Init(void)
 	DHT11_Init();
 	LED_Init();//LED初始化
 	WIFI_Init();
+	Servo_Init();
 	// VoiceIdentify_Init();//语音识别初始化
 }
 
@@ -151,10 +161,10 @@ void Exec_Function(uint8_t type, char str[])
 		 	Ultrasonic_Run();
 		 	strcpy(str, " sonic  ");
 		 	break;
-		// case 9://循迹
-		// 	Tracking_Run();
-		// 	strcpy(str, " sonic  ");
-		// 	break;
+		case 9://循迹
+			Tracking_Run();
+			strcpy(str, " sonic  ");
+			break;
 		case 10://LED ON
 			LED1_ON;
 			//LED2_ON;LED3_ON;
@@ -167,11 +177,26 @@ void Exec_Function(uint8_t type, char str[])
 			break;
 		case 12://读取温湿度
 			DHT11_Read_Data(&temp, &humi);
-			sprintf(str," %d H:%d",temp,humi);
+			sprintf(str,"%d oC H:%d",temp,humi);
 			OLED_ShowString(4,4,str);
 			WIFI_Send_DHT(&temp,&humi);
-
 			strcpy(str, " dht11  ");
+			break;
+		case 13://Servo 45
+			Servo_SetAngle(45);
+			strcpy(str, "servo 45");
+			break;
+		case 14://Servo 90
+			Servo_SetAngle(90);
+			strcpy(str, "servo 90");
+			break;
+		case 15://Servo 135
+			Servo_SetAngle(135);
+			strcpy(str, "servo135");
+			break;
+		case 16://Servo 180
+			Servo_SetAngle(180);
+			strcpy(str, "servo180");
 			break;
 		// case 12://Buzzer ON
 		// 	Buzzer_ON;
@@ -220,7 +245,8 @@ uint8_t WIFI_Run(void)
 		temp = ESP8266_WiFi_MQTT_Connect_IoTServer();
 		if(temp == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
 		{   			     
-			printf("wifi connect success and mqtt sub success\r\n");            
+			printf("wifi connect success and mqtt sub success\r\n");
+			OLED_ShowString(1,4,"wifi OK ");       
 			ESP8266_Buf_Clear();//清空接收缓存区
 
 			WIFI_CONNECT = 1;  //服务器已连接，抛出事件标志 
@@ -251,7 +277,8 @@ void WIFI_Send_DHT(char *temp, char *humi)
 	//读取DHT11温度模块
 	char message[CMD_BUFFER_SIZE] = {0};
 	snprintf(message,sizeof(message),"{\\\"temperature\\\": %d,\\\"humidity\\\": %d}",*temp,*humi);	
-	ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
+	printf("wifi send dht:%s\n",message);
+	//ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
 }
 
 int8_t WIFI_Receive_Task(void)
@@ -299,8 +326,10 @@ int8_t WIFI_Receive_Task(void)
 		// 获取远程命令
 		if(strstr((const char*)received_str, "getValue") != NULL && strstr((const char*)received_str, "state") != NULL){
 			printf("服务器下发的数据:%s \r\n",received_str); 		   	 //串口输出信息
+			char json[128];
+			extract_json((const char*)received_str, json);
 			/* 解析整段JSO数据 */
-			cjson_test = cJSON_Parse((const char*)received_str);
+			cjson_test = cJSON_Parse((const char*)json);
 			if(cjson_test == NULL)
 			{
 				printf("parse fail.\n");
