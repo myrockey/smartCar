@@ -337,7 +337,7 @@ void WIFI_Receive_Task(uint8_t* RxData)
 			}
 		}
 		
-		// 获取远程命令
+		// 获取远程命令(TODO:待完善，接收的数据不完整。或调整设备传输数据类型为hex)
 		if(strstr((const char*)received_str, "getValue") != NULL && strstr((const char*)received_str, "state") != NULL){
 			printf("服务器下发的数据:%s \r\n",received_str); 		   	 //串口输出信息
 			char json[128];
