@@ -73,7 +73,7 @@ int main(void)
 		//OLED_ShowString(1,4,"wifi OK ");
 
 		trackingVal = (L * 100)+ (M * 10) + (R * 1);
-		//distance = Ultrasonic_Distance();
+		distance = Ultrasonic_Distance();
 		OLED_ShowNum(2,4,distance,3);//显示超声波距离
 		OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 		
