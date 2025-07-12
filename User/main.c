@@ -24,6 +24,8 @@ cJSON* cjson_params = NULL;
 cJSON* cjson_params_state = NULL;
 
 uint8_t RxData;//串口接收数据的变量
+uint8_t RxDataClearFlag;//串口接收的数据已读后是否清除标志位 0-不清除，1-清除
+uint8_t wifiRxData;//wifi串口接收数据的变量
 uint8_t wifiState;//记录循迹位置值的变量
 int trackingVal;//记录循迹位置值的变量
 int distance;//离障碍物距离
@@ -51,17 +53,19 @@ int main(void)
 	OLED_ShowString(2,1,"D:");
 	OLED_ShowString(3,1,"J:");
 	OLED_ShowString(4,1,"T:");
-
 	while(1)
 	{
-		//continue;
 		if(WIFI_CONNECT == 0)
 		{
 			OLED_ShowString(1,4,"wifi CON.");
 		}
 		wifiState = WIFI_Run();//WIFI运行
-		OLED_ShowNum(1,1,(uint32_t)wifiState,2);//显示wifi连接状态值
-		RxData = WIFI_Receive_Task();//WIFI接收数据，并ping连接状态
+		OLED_ShowNum(1,1,wifiState,2);//显示wifi连接状态值
+		
+		wifiRxData = WIFI_Receive_Task();//WIFI接收数据，并ping连接状态
+		if(wifiRxData){
+			RxData = wifiRxData;
+		}
 		//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
 		if(PING_MODE == 0)
 		{
@@ -72,35 +76,23 @@ int main(void)
 		//OLED_ShowString(1,4,"wifi OK ");
 
 		trackingVal = (L * 100)+ (M * 10) + (R * 1);
-		distance = Ultrasonic_Distance();
-		OLED_ShowNum(2,4,distance,3);//显示超声波距离
 		OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 		
 		// 接收到数据
 		if(Serial_GetRxFlag() == 1)
 		{
 			RxData = Serial_GetRxData();
-			OLED_ShowNum(1,1,RxData,2);//显示接收的参数
+			OLED_ShowNum(1,14,RxData,2);//显示接收的参数
 		}
 
 		//Voice_broadcast(RxData);
-		
 		Exec_Function(RxData, str);
 		OLED_ShowString(1,4,str);//显示执行的动作
 		
-		//距离太近时
-		if(distance < 10)
-        {
-            // Buzzer_ON;
-            LED1_ON;
-        }
-        else
-        {
-			// Buzzer_OFF;
-            LED1_OFF;
-        }
-		
-		RxData = 0;
+		//清除上次接收的数据
+		if(RxDataClearFlag == 1){
+			RxData = 0;
+		}
 	}
 }
 
@@ -126,6 +118,10 @@ void BSP_Init(void)
 */
 void Exec_Function(uint8_t type, char str[])
 {
+	//默认清除
+	if(RxData > 0){
+		RxDataClearFlag = 1;
+	}
 	switch(RxData)
 	{
 		case 1:
@@ -156,13 +152,18 @@ void Exec_Function(uint8_t type, char str[])
 			CounterClockwise_Rotation();
 			strcpy(str, " Ncycle ");
 			break;
-		case 8://超声波避障
-		 	Ultrasonic_Run();
-		 	strcpy(str, " sonic  ");
+		case 8://超声波测距
+			RxDataClearFlag = 0;
+			distance = Ultrasonic_Distance();
+			OLED_ShowNum(2,4,distance,3);//显示超声波距离
+		 	strcpy(str, "distance");
 		 	break;
 		case 9://循迹
+			RxDataClearFlag = 0;
+			distance = Ultrasonic_Distance();
+			OLED_ShowNum(2,4,distance,3);//显示超声波距离
 			Tracking_Run();
-			strcpy(str, " sonic  ");
+			strcpy(str, "tracking");
 			break;
 		case 10://LED ON
 			LED1_ON;
@@ -183,19 +184,40 @@ void Exec_Function(uint8_t type, char str[])
 			break;
 		case 13://Servo 45
 			Servo_SetAngle(45);
-			strcpy(str, "servo 45");
+			strcpy(str, "servo 0 ");
 			break;
 		case 14://Servo 90
 			Servo_SetAngle(90);
-			strcpy(str, "servo 90");
+			strcpy(str, "servo 45");
 			break;
 		case 15://Servo 135
 			Servo_SetAngle(135);
-			strcpy(str, "servo135");
+			strcpy(str, "servo 90");
 			break;
 		case 16://Servo 180
 			Servo_SetAngle(180);
+			strcpy(str, "servo135");
+			break;
+		case 17://Servo 180
+			Servo_SetAngle(180);
 			strcpy(str, "servo180");
+		case 18://超声波避障
+			RxDataClearFlag = 0;
+			distance = Ultrasonic_Distance();
+			OLED_ShowNum(2,4,distance,3);//显示超声波距离	
+			Ultrasonic_Run();			
+			strcpy(str, " sonic  ");
+			//距离太近时
+			if(distance < 10)
+			{
+				// Buzzer_ON;
+				LED1_ON;
+			}
+			else
+			{
+				// Buzzer_OFF;
+				LED1_OFF;
+			}
 			break;
 		// case 12://Buzzer ON
 		// 	Buzzer_ON;
