@@ -291,9 +291,9 @@ void WIFI_Send_DHT(char *temp, char *humi)
 	}
 	//读取DHT11温度模块
 	char message[CMD_BUFFER_SIZE] = {0};
-	snprintf(message,sizeof(message),"{\\\"temperature\\\": %d,\\\"humidity\\\": %d}",*temp,*humi);	
+	snprintf(message,sizeof(message),"{\\\"temperature\\\": %d}",*temp);
 	printf("wifi send dht:%s\n",message);
-	//ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
+	ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
 }
 
 void WIFI_Receive_Task(uint8_t* RxData)
