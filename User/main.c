@@ -259,8 +259,8 @@ void WIFI_Run(uint8_t* wifiState)
 		TIM_Cmd(WIFI_TIM, DISABLE);                       //关闭TIM3
 		PING_MODE = 0;//关闭发送PING包的定时器3，清除事件标志位
 		ESP8266_Buf_Clear();//清空接收缓存区
-		wifiState = ESP8266_WiFi_MQTT_Connect_IoTServer();
-		if(wifiState == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
+		*wifiState = ESP8266_WiFi_MQTT_Connect_IoTServer();
+		if(*wifiState == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
 		{   			     
 			printf("wifi connect success and mqtt sub success\r\n");
 			OLED_ShowString(1,4,"wifi OK ");      
