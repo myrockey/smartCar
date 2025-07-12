@@ -17,7 +17,7 @@
 #include "DHT11.h"
 #include "LED.h"
 #include "Servo.h"
-//#include "VoiceIdentify.h"
+#include "VoiceIdentify.h"
 
 cJSON* cjson_test = NULL;//json
 cJSON* cjson_params = NULL;
@@ -54,7 +54,6 @@ int main(void)
 
 	while(1)
 	{
-		
 		//continue;
 		if(WIFI_CONNECT == 0)
 		{
@@ -118,7 +117,7 @@ void BSP_Init(void)
 	LED_Init();//LED初始化
 	WIFI_Init();
 	Servo_Init();
-	// VoiceIdentify_Init();//语音识别初始化
+	VoiceIdentify_Init();//语音识别初始化
 }
 
 /*
@@ -213,18 +212,18 @@ void Exec_Function(uint8_t type, char str[])
 *根据参数，播报语音。
 具体原理：stm32（发送方）通过串口传输数据 语音识别模块ASRPRO（接收方），根据接收的数据，执行语音播报。
 */
-//void Voice_broadcast(uint8_t type)
-//{
-//	switch(type)
-//	{
-//		case 10://LED ON
-//			VoiceIdentify_SendString("LED ON");
-//			break;
-//		case 11://LED OFF
-//			VoiceIdentify_SendString("LED OFF");
-//			break;
-//	}
-//}
+void Voice_broadcast(uint8_t type)
+{
+	switch(type)
+	{
+		case 10://LED ON
+			VoiceIdentify_SendByte(type);
+			break;
+		case 11://LED OFF
+			VoiceIdentify_SendByte(type);
+			break;
+	}
+}
 
 /*
 @函数名：WIFI_Run
