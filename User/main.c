@@ -25,7 +25,6 @@ cJSON* cjson_params_state = NULL;
 
 uint8_t RxData;//串口接收数据的变量
 uint8_t RxDataClearFlag;//串口接收的数据已读后是否清除标志位 0-不清除，1-清除
-uint8_t wifiRxData;//wifi串口接收数据的变量
 uint8_t wifiState;//记录循迹位置值的变量
 int trackingVal;//记录循迹位置值的变量
 int distance;//离障碍物距离
@@ -42,8 +41,8 @@ void Exec_Function(uint8_t type, char str[]);
 //根据参数，播报语音
 void Voice_broadcast(uint8_t type);
 
-uint8_t WIFI_Run(void);
-int8_t WIFI_Receive_Task(void);
+void WIFI_Run(uint8_t* wifiState);
+void WIFI_Receive_Task(uint8_t* RxData);
 void WIFI_Send_DHT(char *temp, char *humi);
 
 int main(void)
@@ -59,13 +58,10 @@ int main(void)
 		{
 			OLED_ShowString(1,4,"wifi CON.");
 		}
-		wifiState = WIFI_Run();//WIFI运行
+		WIFI_Run(&wifiState);//WIFI运行
 		OLED_ShowNum(1,1,wifiState,2);//显示wifi连接状态值
 		
-		wifiRxData = WIFI_Receive_Task();//WIFI接收数据，并ping连接状态
-		if(wifiRxData){
-			RxData = wifiRxData;
-		}
+		WIFI_Receive_Task(&RxData);//WIFI接收数据，并ping连接状态
 		//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
 		if(PING_MODE == 0)
 		{
@@ -254,9 +250,8 @@ void Voice_broadcast(uint8_t type)
 @参数：
 @返回值：无
 */
-uint8_t WIFI_Run(void)
+void WIFI_Run(uint8_t* wifiState)
 {
-	uint8_t temp;
 	//服务器或者wifi已断开，清除事件标志，继续执行本任务，重新连接
 	if(WIFI_CONNECT != 1)
 	{
@@ -264,11 +259,11 @@ uint8_t WIFI_Run(void)
 		TIM_Cmd(WIFI_TIM, DISABLE);                       //关闭TIM3
 		PING_MODE = 0;//关闭发送PING包的定时器3，清除事件标志位
 		ESP8266_Buf_Clear();//清空接收缓存区
-		temp = ESP8266_WiFi_MQTT_Connect_IoTServer();
-		if(temp == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
+		wifiState = ESP8266_WiFi_MQTT_Connect_IoTServer();
+		if(wifiState == 0)			  //如果WiFi连接云服务器函数返回0，表示正确，进入if
 		{   			     
 			printf("wifi connect success and mqtt sub success\r\n");
-			OLED_ShowString(1,4,"wifi OK ");       
+			OLED_ShowString(1,4,"wifi OK ");      
 			ESP8266_Buf_Clear();//清空接收缓存区
 
 			WIFI_CONNECT = 1;  //服务器已连接，抛出事件标志 
@@ -279,8 +274,6 @@ uint8_t WIFI_Run(void)
 			PING_MODE = 1; //30s的PING定时器，设置事件标志位
 		}
 	}
-
-	return temp;
 }
 
 /*
@@ -303,19 +296,18 @@ void WIFI_Send_DHT(char *temp, char *humi)
 	//ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
 }
 
-int8_t WIFI_Receive_Task(void)
+void WIFI_Receive_Task(uint8_t* RxData)
 {
-	uint8_t res = 0;
 	//服务器连接事件发生执行此任务，否则挂起
 	if(WIFI_CONNECT != 1)
 	{
-		return res;
+		return;
 	}
 
 	//等待接收数据通知
 	if(WIFI_Receive_Flag != 1)
 	{
-		return res;
+		return;
 	}
 	WIFI_Receive_Flag = 0;
 
@@ -355,15 +347,12 @@ int8_t WIFI_Receive_Task(void)
 			if(cjson_test == NULL)
 			{
 				printf("parse fail.\n");
-				return -1;
+				return;
 			}
 			/* 依次根据名称提取JSON数据（键值对） */
 			cjson_params = cJSON_GetObjectItem(cjson_test, "params");
 			cjson_params_state = cJSON_GetObjectItem(cjson_params, "state");
-			res = (uint8_t)cjson_params_state->valueint;
-			return res;
+			*RxData = (uint8_t)cjson_params_state->valueint;
 		}
 	}
-
-	return res;
 }
