@@ -33,6 +33,7 @@ static volatile uint8_t  ir_addr = 0;
 static volatile uint8_t  ir_cmd  = 0;
 static volatile uint32_t ir_timeoutCnt = 0;   // 每 1 ms +1
 static const    uint32_t IR_TIMEOUT_MS = 60; // 60 ms 无信号即超时
+static const uint32_t ir_diff = 100;
 
 void IR_TIM_Init(void)
 {
@@ -197,12 +198,12 @@ void IR_EXTI_IRQHandler(void)
             ir_state = 1;
             break;
         case 1:                 /* 判断 Start/Repeat */
-            if (t > 13500 - 500 && t < 13500 + 500)       /* Start 13.5ms */
+            if (t > 13500 - ir_diff && t < 13500 + ir_diff)       /* Start 13.5ms */
             {
                 ir_state = 2;
                 ir_bits  = 0;
             }
-            else if (t > 11250 - 500 && t < 11250 + 500)  /* Repeat 11.25ms */
+            else if (t > 11250 - ir_diff && t < 11250 + ir_diff)  /* Repeat 11.25ms */
             {
                 ir_repeatFlag = 1;
                 ir_state = 0;
@@ -214,7 +215,7 @@ void IR_EXTI_IRQHandler(void)
             break;
 
         case 2:                 /* 接收 32 bit 数据 */
-            if (t > 560 - 300 && t < 560 + 300)   /* 560us 低电平，忽略 */
+            if (t > 560 - ir_diff && t < 560 + ir_diff)   /* 560us 低电平，忽略 */
                 break;
 
             if (ir_bits >= 32)                  /* 已经收完，容错 */
@@ -223,12 +224,12 @@ void IR_EXTI_IRQHandler(void)
                 break;
             }
 
-            if (t > 1120 - 400 && t < 1120 + 400)        /* 逻辑0 ~1.12ms */
+            if (t > 1120 - ir_diff && t < 1120 + ir_diff)        /* 逻辑0 ~1.12ms */
             {
                 ir_buf[ir_bits / 8] &= ~(1 << (ir_bits % 8));
                 ir_bits++;
             }
-            else if (t > 2250 - 400 && t < 2250 + 400)   /* 逻辑1 ~2.25ms */
+            else if (t > 2250 - ir_diff && t < 2250 + ir_diff)   /* 逻辑1 ~2.25ms */
             {
                 ir_buf[ir_bits / 8] |=  (1 << (ir_bits % 8));
                 ir_bits++;
