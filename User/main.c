@@ -16,7 +16,8 @@
 // #include "Buzzer.h"
 #include "DHT11.h"
 #include "LED.h"
-#include "Servo.h"
+// #include "Servo.h"
+#include "IR_Nec.h"
 #include "VoiceIdentify.h"
 
 cJSON* cjson_test = NULL;//json
@@ -52,8 +53,27 @@ int main(void)
 	OLED_ShowString(2,1,"D:");
 	OLED_ShowString(3,1,"J:");
 	OLED_ShowString(4,1,"T:");
+	
+	printf("IR NEC Decoder Ready\r\n");
+
+    while (1)
+    {
+        if (IR_GetDataFlag())          // 收到完整数据帧
+        {
+            uint8_t addr = IR_GetAddress();
+            uint8_t cmd  = IR_GetCommand();
+            printf("Addr: 0x%02X, Cmd: 0x%02X\r\n", addr, cmd);
+        }
+
+        if (IR_GetRepeatFlag())        // 连发帧（长按）
+        {
+            printf("Repeat\r\n");
+        }
+    }
+	
 	while(1)
 	{
+		continue;
 		if(WIFI_CONNECT == 0)
 		{
 			OLED_ShowString(1,4,"wifi CON.");
@@ -104,7 +124,8 @@ void BSP_Init(void)
 	DHT11_Init();
 	LED_Init();//LED初始化
 	WIFI_Init();
-	Servo_Init();
+	// Servo_Init();
+	IR_Nec_Init();
 	VoiceIdentify_Init();//语音识别初始化
 }
 
@@ -178,26 +199,26 @@ void Exec_Function(uint8_t type, char str[])
 			WIFI_Send_DHT(&temp,&humi);
 			strcpy(str, " dht11  ");
 			break;
-		case 13://Servo 0
-			Servo_SetAngle(0);
-			strcpy(str, "servo 0 ");
-			break;
-		case 14://Servo 45
-			Servo_SetAngle(45);
-			strcpy(str, "servo 45");
-			break;
-		case 15://Servo 90
-			Servo_SetAngle(90);
-			strcpy(str, "servo 90");
-			break;
-		case 16://Servo 135
-			Servo_SetAngle(135);
-			strcpy(str, "servo135");
-			break;
-		case 17://Servo 180
-			Servo_SetAngle(180);
-			strcpy(str, "servo180");
-			break;
+		// case 13://Servo 0
+		// 	Servo_SetAngle(0);
+		// 	strcpy(str, "servo 0 ");
+		// 	break;
+		// case 14://Servo 45
+		// 	Servo_SetAngle(45);
+		// 	strcpy(str, "servo 45");
+		// 	break;
+		// case 15://Servo 90
+		// 	Servo_SetAngle(90);
+		// 	strcpy(str, "servo 90");
+		// 	break;
+		// case 16://Servo 135
+		// 	Servo_SetAngle(135);
+		// 	strcpy(str, "servo135");
+		// 	break;
+		// case 17://Servo 180
+		// 	Servo_SetAngle(180);
+		// 	strcpy(str, "servo180");
+		// 	break;
 		case 18://超声波避障
 			RxDataClearFlag = 0;
 			distance = Ultrasonic_Distance();
@@ -224,6 +245,7 @@ void Exec_Function(uint8_t type, char str[])
 		// 	Buzzer_OFF;
 		// 	strcpy(str, " buzzer ");
 		// 	break;
+		
 	}
 }
 
