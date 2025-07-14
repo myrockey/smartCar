@@ -10,13 +10,13 @@
 #include "SmartCar.h"
 // #include "Serial.h"
 #include "Bluetooth.h"
-#include "Ultrasonic.h"
+// #include "Ultrasonic.h"
 #include "WIFI.h"
 #include "Tracking.h"
 // #include "Buzzer.h"
 #include "DHT11.h"
 #include "LED.h"
-// #include "Servo.h"
+#include "Servo.h"
 #include "IR_Nec.h"
 #include "VoiceIdentify.h"
 
@@ -118,13 +118,13 @@ void BSP_Init(void)
 	OLED_Init();//显示屏初始化
 	SmartCar_Init();//电机驱动初始化
 	Bluetooth_Init();//蓝牙初始化
-	Ultrasonic_Init();//超声波初始化
+	// Ultrasonic_Init();//超声波初始化
 	Tracking_Init();//循迹初始化
 	// Buzzer_Init();//蜂鸣器初始化
 	DHT11_Init();
 	LED_Init();//LED初始化
 	WIFI_Init();
-	// Servo_Init();
+	Servo_Init();
 	IR_Nec_Init();
 	VoiceIdentify_Init();//语音识别初始化
 }
@@ -171,13 +171,13 @@ void Exec_Function(uint8_t type, char str[])
 			break;
 		case 8://超声波测距
 			RxDataClearFlag = 0;
-			distance = Ultrasonic_Distance();
+			// distance = Ultrasonic_Distance();
 			OLED_ShowNum(2,4,distance,3);//显示超声波距离
 		 	strcpy(str, "distance");
 		 	break;
 		case 9://循迹
 			RxDataClearFlag = 0;
-			distance = Ultrasonic_Distance();
+			// distance = Ultrasonic_Distance();
 			OLED_ShowNum(2,4,distance,3);//显示超声波距离
 			Tracking_Run();
 			strcpy(str, "tracking");
@@ -199,31 +199,31 @@ void Exec_Function(uint8_t type, char str[])
 			WIFI_Send_DHT(&temp,&humi);
 			strcpy(str, " dht11  ");
 			break;
-		// case 13://Servo 0
-		// 	Servo_SetAngle(0);
-		// 	strcpy(str, "servo 0 ");
-		// 	break;
-		// case 14://Servo 45
-		// 	Servo_SetAngle(45);
-		// 	strcpy(str, "servo 45");
-		// 	break;
-		// case 15://Servo 90
-		// 	Servo_SetAngle(90);
-		// 	strcpy(str, "servo 90");
-		// 	break;
-		// case 16://Servo 135
-		// 	Servo_SetAngle(135);
-		// 	strcpy(str, "servo135");
-		// 	break;
-		// case 17://Servo 180
-		// 	Servo_SetAngle(180);
-		// 	strcpy(str, "servo180");
-		// 	break;
+		case 13://Servo 0
+			Servo_SetAngle(0);
+			strcpy(str, "servo 0 ");
+			break;
+		case 14://Servo 45
+			Servo_SetAngle(45);
+			strcpy(str, "servo 45");
+			break;
+		case 15://Servo 90
+			Servo_SetAngle(90);
+			strcpy(str, "servo 90");
+			break;
+		case 16://Servo 135
+			Servo_SetAngle(135);
+			strcpy(str, "servo135");
+			break;
+		case 17://Servo 180
+			Servo_SetAngle(180);
+			strcpy(str, "servo180");
+			break;
 		case 18://超声波避障
 			RxDataClearFlag = 0;
-			distance = Ultrasonic_Distance();
+			// distance = Ultrasonic_Distance();
 			OLED_ShowNum(2,4,distance,3);//显示超声波距离	
-			Ultrasonic_Run();			
+			// Ultrasonic_Run();			
 			strcpy(str, " sonic  ");
 			//距离太近时
 			if(distance < 10)
