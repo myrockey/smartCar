@@ -9,11 +9,6 @@
 #define IR_GPIO_PORT      GPIOA	                     /* GPIO端口 */
 #define IR_GPIO_PIN       GPIO_Pin_8
 #define IR_TIM    	      TIM1		                /* 定时器1 */
-#define IR_IN_EXTI_Port   GPIO_PortSourceGPIOC        /* 外部中断 */
-#define IR_IN_EXTI_Pin    GPIO_PinSource15
-#define IR_IN_EXTI_Line   EXTI_Line15
-#define IR_IN_EXTI_IRQN   EXTI15_10_IRQn
-#define IR_EXTI_IRQHandler EXTI15_10_IRQHandler
 #define IR_TIM_UPDATE_IRQn     TIM1_UP_IRQn  /* TIM更新中断 */
 #define IR_TIM_UPDATE_IRQHandler  TIM1_UP_IRQHandler
 #define IR_TIM_CC_IRQn     TIM1_CC_IRQn  /* TIM更新中断 */
@@ -29,10 +24,9 @@
 /* --------------------------------------------------- */
 
 /* 全局变量 */
-static uint8_t  cap_pol          = 0; //捕获电平类型1-上升沿或0-下降沿
-static uint8_t  cap_pulse_cnt    = 0;//捕获到的计数
+static volatile uint8_t  cap_pol          = 0; //捕获电平类型1-上升沿或0-下降沿
+static volatile uint8_t  cap_pulse_cnt    = 0;//捕获到的计数
 static volatile uint32_t ir_overflow = 0;//溢出次数
-static volatile uint32_t ir_count = 0;
 static volatile uint8_t  ir_state   = 0;   /* 0/1/2 */
 
 static uint16_t rx_frame[RX_SEQ_NUM*2] = {0}; 
@@ -99,7 +93,12 @@ void IR_Nec_Init(void)
     TIM_ITConfig(IR_TIM, TIM_IT_CC1, ENABLE);
 
 	/* TIM1 Update NVIC */
-
+    NVIC_InitTypeDef NVIC_InitStructure;
+    NVIC_InitStructure.NVIC_IRQChannel = TIM1_UP_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 
 	TIM_IR_NEC();
 }
@@ -129,7 +128,6 @@ void TIM_SET_ITConfig(uint16_t TIM_ICPolarity)
 
     /* 6. 重新使能 CC1 中断 */
     TIM_ITConfig(TIM1, TIM_IT_CC1, ENABLE);
-
 }
 /* -------------------- 查询接口 -------------------- */
 uint8_t IR_GetDataFlag(void)
@@ -162,6 +160,7 @@ uint8_t IR_GetCommand(void)
     {
         ir_cmd = rx.data._rev.key_val;
     }
+    rx.data.rev = 0;
 	return ir_cmd;
 }
 
@@ -284,7 +283,7 @@ uint8_t hx1838_data_decode(void)
     memcpy(rx.src_data,rx_frame,RX_SEQ_NUM*4);
     memset(rx_frame,0x00,RX_SEQ_NUM*4);   
     printf("========= rx.src[] =================\r\n");
-    for(uint8_t i = 0;i<=(RX_SEQ_NUM*2);i++)
+    for(uint8_t i = 0;i<=(RX_SEQ_NUM*2-1);i++)
     {
         printf("[%d]%d\r\n",i,rx.src_data[i]);
     }
