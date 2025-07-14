@@ -54,26 +54,26 @@ int main(void)
 	OLED_ShowString(3,1,"J:");
 	OLED_ShowString(4,1,"T:");
 	
-	printf("IR NEC Decoder Ready\r\n");
+	// printf("IR NEC Decoder Ready\r\n");
 
-    while (1)
-    {
-        if (IR_GetDataFlag())          // 收到完整数据帧
-        {
-            uint8_t addr = IR_GetAddress();
-            uint8_t cmd  = IR_GetCommand();
-            printf("Addr: 0x%02X, Cmd: 0x%02X\r\n", addr, cmd);
-        }
+    // while (1)
+    // {
+    //     if (IR_GetDataFlag())          // 收到完整数据帧
+    //     {
+    //         uint8_t addr = IR_GetAddress();
+    //         uint8_t cmd  = IR_GetData();
+    //         printf("Addr: 0x%02X, Cmd: 0x%02X\r\n", addr, cmd);
+    //     }
 
-        if (IR_GetRepeatFlag())        // 连发帧（长按）
-        {
-            printf("Repeat\r\n");
-        }
-    }
+    //     if (IR_GetRepeatFlag())        // 连发帧（长按）
+    //     {
+    //         printf("Repeat\r\n");
+    //     }
+    // }
 	
 	while(1)
 	{
-		continue;
+		// continue;
 		if(WIFI_CONNECT == 0)
 		{
 			OLED_ShowString(1,4,"wifi CON.");
@@ -93,11 +93,19 @@ int main(void)
 
 		trackingVal = (L * 100)+ (M * 10) + (R * 1);
 		OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
+
+		if (IR_GetDataFlag())          // 收到红外遥控的完整数据帧
+		{
+			RxData = IR_GetData();
+		}
 		
 		// 接收到数据
 		if(Serial_GetRxFlag() == 1)
 		{
 			RxData = Serial_GetRxData();
+		}
+
+		if(RxData){
 			OLED_ShowNum(1,14,RxData,2);//显示接收的参数
 		}
 

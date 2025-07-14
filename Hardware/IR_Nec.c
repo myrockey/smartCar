@@ -20,6 +20,11 @@
 #define IR_TIM_IRQHandler  TIM3_IRQHandler
 /* --------------------------------------------------- */
 
+#define IR_UP    0x18
+#define IR_DOWN  0x52
+#define IR_OK    0x1C
+#define IR_LEFT  0x08
+#define IR_RIGHT 0x5A
 
 /* 全局变量 */
 static volatile uint32_t ir_count = 0;
@@ -50,7 +55,7 @@ void IR_TIM_Init(void)
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;				//定义结构体变量
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;     //时钟分频，选择不分频，此参数用于配置滤波器时钟，不影响时基单元功能
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up; //计数器模式，选择向上计数
-	TIM_TimeBaseInitStructure.TIM_Period = 1000-1;                 //计数周期，即ARR的值  1个技术周期的时间是 0.001ms*1000 = 1ms
+	TIM_TimeBaseInitStructure.TIM_Period = 0xFFFF;                 //计数周期，即ARR的值  1个技术周期的时间是 0.001ms*ARR
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 72 - 1;               //预分频器，即PSC的值 频率1MHz 时间就是 1000ms/1000000 = 0.001 ms
 	TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;            //重复计数器，高级定时器才会用到
 	TIM_TimeBaseInit(IR_TIM, &TIM_TimeBaseInitStructure);             //将结构体变量交给TIM_TimeBaseInit，配置TIM1的时基单元
@@ -97,16 +102,16 @@ void IR_Nec_Init(void)
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-	// /* 允许更新中断 */
-    TIM_ITConfig(IR_TIM, TIM_IT_Update, ENABLE);
+	// // /* 允许更新中断 */
+    // TIM_ITConfig(IR_TIM, TIM_IT_Update, ENABLE);
 
-	/* TIM1 Update NVIC */
-	NVIC_InitTypeDef nvic_tim;
-	nvic_tim.NVIC_IRQChannel                   = IR_TIM_IRn;
-	nvic_tim.NVIC_IRQChannelPreemptionPriority = 2;
-	nvic_tim.NVIC_IRQChannelSubPriority        = 2;
-	nvic_tim.NVIC_IRQChannelCmd                = ENABLE;
-	NVIC_Init(&nvic_tim);
+	// /* TIM1 Update NVIC */
+	// NVIC_InitTypeDef nvic_tim;
+	// nvic_tim.NVIC_IRQChannel                   = IR_TIM_IRn;
+	// nvic_tim.NVIC_IRQChannelPreemptionPriority = 2;
+	// nvic_tim.NVIC_IRQChannelSubPriority        = 2;
+	// nvic_tim.NVIC_IRQChannelCmd                = ENABLE;
+	// NVIC_Init(&nvic_tim);
 
 	IR_TIM_Init();
 }
@@ -135,6 +140,34 @@ uint8_t IR_GetCommand(void)
 { 
 	return ir_cmd;  
 }
+
+uint8_t IR_GetData(void)  
+{ 
+    uint8_t res = 0;
+    uint8_t cmd = IR_GetCommand();
+    switch (cmd)
+    {
+        case IR_UP:
+            res = 1;
+            break;
+        case IR_DOWN:
+            res = 2;
+            break;
+        case IR_OK:
+            res = 3;
+            break;
+        case IR_LEFT:
+            res = 4;
+            break;
+        case IR_RIGHT:
+            res = 5;
+            break;
+        default:
+            break;
+    }
+	return res;
+}
+
 /* -------------------- 查询接口 -------------------- */
 
 void IR_TIM_IRQHandler(void)
@@ -167,7 +200,7 @@ static void CloseTimerForIR()
 uint32_t GetTimerCountForIR(void)
 {
    uint32_t t = 0;
-   t = ir_count*1000;
+   //t = ir_count*1000;
    t += TIM_GetCounter(IR_TIM);
    IR_TIM->CNT = 0;  //计数器归零
    return t;

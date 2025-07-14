@@ -114,11 +114,11 @@ void Ultrasonic_Run(void)
 }
 
 //定时器3终中断
-void Ultrasonic_TIM_IRQHandler(void)  
-{
-   if (TIM_GetITStatus(Ultrasonic_TIM, TIM_IT_Update) != RESET)  
-   {
-       TIM_ClearITPendingBit(Ultrasonic_TIM, TIM_IT_Update  ); 
-       Hcsr04_Count++; //计数器开始加
-   }
-}
+// void Ultrasonic_TIM_IRQHandler(void)  
+// {
+//    if (TIM_GetITStatus(Ultrasonic_TIM, TIM_IT_Update) != RESET)  
+//    {
+//        TIM_ClearITPendingBit(Ultrasonic_TIM, TIM_IT_Update  ); 
+//        Hcsr04_Count++; //计数器开始加
+//    }
+// }
