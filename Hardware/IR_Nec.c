@@ -31,9 +31,7 @@ static volatile uint8_t  ir_dataFlag   = 0;
 static volatile uint8_t  ir_repeatFlag = 0;
 static volatile uint8_t  ir_addr = 0;
 static volatile uint8_t  ir_cmd  = 0;
-static volatile uint32_t ir_timeoutCnt = 0;   // 每 1 ms +1
-static const    uint32_t IR_TIMEOUT_MS = 60; // 60 ms 无信号即超时
-static const uint32_t ir_diff = 100;
+static const uint32_t ir_diff = 500;
 
 void IR_TIM_Init(void)
 {
@@ -88,7 +86,7 @@ void IR_Nec_Init(void)
 	/* NVIC */
 	NVIC_InitTypeDef NVIC_InitStructure;					//定义结构体变量
     NVIC_InitStructure.NVIC_IRQChannel = IR_IN_EXTI_IRQN;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 1;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
@@ -133,19 +131,6 @@ uint8_t IR_GetCommand(void)
 }
 /* -------------------- 查询接口 -------------------- */
 
-// static uint32_t IR_GetDelta(void)
-// {
-//     uint32_t now = TIM_GetCounter(IR_TIM);
-//     uint32_t delta;
-//     if (now >= ir_lastCnt)
-//         delta = now - ir_lastCnt;
-//     else
-//         delta = 0x10000 + now - ir_lastCnt;//你使用的是 TIM1，它是一个 16 位定时器，最大值为 0xFFFF，所以这里没错。
-// 		//但如果你未来换成 32 位定时器（如 TIM2/3/4），就要注意。
-//     ir_lastCnt = now;
-//     return delta;          /* 单位：us */
-// }
-
 static uint32_t IR_GetDelta(void)
 {
     uint32_t now = TIM_GetCounter(IR_TIM);
@@ -154,10 +139,15 @@ static uint32_t IR_GetDelta(void)
 
     uint32_t delta;
     if (now >= ir_lastCnt)
-        delta = now - ir_lastCnt + of * 0x10000UL;
+    {
+        delta = now - ir_lastCnt + of * 0x10000UL;//你使用的是 TIM1，它是一个 16 位定时器，最大值为 0xFFFF，所以这里没错。
+                                                  //但如果你未来换成 32 位定时器（如 TIM2/3/4），就要注意。
+    }
     else
+    {
         delta = (0x10000UL - ir_lastCnt) + now + of * 0x10000UL;
-
+    }
+      
     ir_lastCnt = now;
     return delta;
 }
@@ -169,16 +159,6 @@ void IR_TIM_UP_IRQHandler(void)
     {
         TIM_ClearITPendingBit(IR_TIM, TIM_IT_Update);
 		ir_overflow++;
-        // if (ir_state != 0)           // 只在非空闲状态计数
-        // {
-        //     ir_timeoutCnt++;
-        //     if (ir_timeoutCnt >= IR_TIMEOUT_MS)
-        //     {
-        //         ir_state = 0;        // 强制复位
-        //         ir_bits  = 0;
-        //         ir_timeoutCnt = 0;
-        //     }
-        // }
     }
 }
 
@@ -188,71 +168,61 @@ void IR_EXTI_IRQHandler(void)
 	if (EXTI_GetITStatus(IR_IN_EXTI_Line) != RESET)
     {
         EXTI_ClearITPendingBit(IR_IN_EXTI_Line);
-
-		ir_timeoutCnt = 0;           // 有边沿 → 清零超时
         uint32_t t = IR_GetDelta();
 
         switch (ir_state)
         {
-        case 0:                 /* 空闲，等待同步头 */
-            ir_state = 1;
-            break;
-        case 1:                 /* 判断 Start/Repeat */
-            if (t > 13500 - ir_diff && t < 13500 + ir_diff)       /* Start 13.5ms */
-            {
-                ir_state = 2;
-                ir_bits  = 0;
-            }
-            else if (t > 11250 - ir_diff && t < 11250 + ir_diff)  /* Repeat 11.25ms */
-            {
-                ir_repeatFlag = 1;
-                ir_state = 0;
-            }
-            else
-            {
-                ir_state = 0;   /* 错误，复位 */
-            }
-            break;
-
-        case 2:                 /* 接收 32 bit 数据 */
-            if (t > 560 - ir_diff && t < 560 + ir_diff)   /* 560us 低电平，忽略 */
+            case 0:                 /* 空闲，等待同步头 */
+                ir_state = 1;
                 break;
-
-            if (ir_bits >= 32)                  /* 已经收完，容错 */
-            {
-                ir_state = 0;
-                break;
-            }
-
-            if (t > 1120 - ir_diff && t < 1120 + ir_diff)        /* 逻辑0 ~1.12ms */
-            {
-                ir_buf[ir_bits / 8] &= ~(1 << (ir_bits % 8));
-                ir_bits++;
-            }
-            else if (t > 2250 - ir_diff && t < 2250 + ir_diff)   /* 逻辑1 ~2.25ms */
-            {
-                ir_buf[ir_bits / 8] |=  (1 << (ir_bits % 8));
-                ir_bits++;
-            }
-            else
-            {
-                ir_state = 0;   /* 错误，复位 */
-                break;
-            }
-
-            if (ir_bits == 32)
-            {
-                ir_state = 0;
-                /* 校验 */
-                if ((ir_buf[0] == (uint8_t)~ir_buf[1]) &&
-                    (ir_buf[2] == (uint8_t)~ir_buf[3]))
+            case 1:                 /* 判断 Start/Repeat */
+                if (t > 13500 - ir_diff && t < 13500 + ir_diff)       /* Start 13.5ms */
                 {
-                    ir_addr = ir_buf[0];
-                    ir_cmd  = ir_buf[2];
-                    ir_dataFlag = 1;
+                    ir_state = 2;
                 }
-            }
-            break;
+                else if (t > 11250 - ir_diff && t < 11250 + ir_diff)  /* Repeat 11.25ms */
+                {
+                    ir_repeatFlag = 1;
+                    ir_state = 0;
+                }
+                else //接收出错
+                {
+                    ir_state = 1;   /* 状态置为1 */
+                }
+                break;
+            case 2:                 /* 状态2，接收数据 接收 32 bit 数据 */
+                if (t > 1120 - ir_diff && t < 1120 + ir_diff)        /* 逻辑0 ~1.12ms */
+                {
+                    ir_buf[ir_bits / 8] &= ~(1 << (ir_bits % 8));
+                    ir_bits++;
+                }
+                else if (t > 2250 - ir_diff && t < 2250 + ir_diff)   /* 逻辑1 ~2.25ms */
+                {
+                    ir_buf[ir_bits / 8] |=  (1 << (ir_bits % 8));
+                    ir_bits++;
+                }
+                else
+                {
+                    ir_bits = 0;//数据位置清0
+                    ir_state = 1;   /* 状态置为1 */
+                    break;
+                }
+
+                //如果接收到了32位数据
+                if (ir_bits >= 32)
+                {
+                    ir_bits = 0;
+                    ir_state = 0;
+                    /* 校验 */
+                    if ((ir_buf[0] == (uint8_t)~ir_buf[1]) &&
+                        (ir_buf[2] == (uint8_t)~ir_buf[3]))
+                    {
+                        ir_addr = ir_buf[0];
+                        ir_cmd  = ir_buf[2];
+                        ir_dataFlag = 1;
+                    }
+                }
+                break;
         }
     }
 }
