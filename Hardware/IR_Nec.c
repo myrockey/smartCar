@@ -92,19 +92,6 @@ void IR_Nec_Init(void)
     TIM_ITConfig(IR_TIM, TIM_IT_CC1, ENABLE);
 
 	/* TIM1 Update NVIC */
-	//NVIC_InitTypeDef TIM_ICInitStructure;
-	TIM_ICInitStructure.NVIC_IRQChannel                   = IR_TIM_UPDATE_IRQn;
-	TIM_ICInitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-	TIM_ICInitStructure.NVIC_IRQChannelSubPriority        = 2;
-	TIM_ICInitStructure.NVIC_IRQChannelCmd                = ENABLE;
-	NVIC_Init(&TIM_ICInitStructure);
-
-    //NVIC_InitTypeDef TIM_ICInitStructure;
-	TIM_ICInitStructure.NVIC_IRQChannel                   = IR_TIM_UPDATE_IRQn;
-	TIM_ICInitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-	TIM_ICInitStructure.NVIC_IRQChannelSubPriority        = 2;
-	TIM_ICInitStructure.NVIC_IRQChannelCmd                = ENABLE;
-	NVIC_Init(&TIM_ICInitStructure);
 
 
 	TIM_IR_NEC();
@@ -137,11 +124,6 @@ uint8_t IR_GetCommand(void)
 /* -------------------- 查询接口 -------------------- */
 
 //读取通道1捕获的值
-uint16_t IR_TIM_GetCapture1()
-{
-    return TIM_GetCapture1(IR_TIM);
-}
-
 uint16_t IR_TIM_GetCapture1()
 {
     return TIM_GetCapture1(IR_TIM);
