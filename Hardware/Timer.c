@@ -1,9 +1,42 @@
 #include "stm32f10x.h"                  // Device header
 #include "Timer.h"
 
+/* 舵机定时器*/
+void TIM_Servo(void)
+{
+	SG90_TIM_APBX(SG90_TIM_CLK, ENABLE);			//开启TIM1的时钟
+
+	/*配置时钟源*/
+	TIM_InternalClockConfig(SG90_TIM);		//选择TIM1为内部时钟，若不调用此函数，TIM默认也为内部时钟
+	
+	/*时基单元初始化*/
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;				//定义结构体变量
+	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;     //时钟分频，选择不分频，此参数用于配置滤波器时钟，不影响时基单元功能
+	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up; //计数器模式，选择向上计数
+	TIM_TimeBaseInitStructure.TIM_Period = 20000 - 1;                 //计数周期，即ARR的值
+	TIM_TimeBaseInitStructure.TIM_Prescaler = 72 - 1;               //预分频器，即PSC的值
+	TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;            //重复计数器，高级定时器才会用到
+	TIM_TimeBaseInit(SG90_TIM, &TIM_TimeBaseInitStructure);             //将结构体变量交给TIM_TimeBaseInit，配置TIM1的时基单元
+	/*TIM使能*/
+	TIM_Cmd(SG90_TIM, ENABLE);			//使能TIM1，定时器开始运行
+}
+
+/*红外遥控定时器 */
+void TIM_IR_NEC(void)
+{
+	TIM_Init_Servo();
+}
+
 /* 超声波模块-定时器 */
 void TIM_Ultrasonic(void)
 {
+	// APB1 是 36MHz 但是定时器的时钟频率计算是根据 （预分频系数、倍频器 决定的）。
+    /* 当预分频系数等于1时，倍频器不x2，等预分频系数不等于1时，倍频器x2 
+    举例：系统时钟72MHz,APB1 为36MHz，APB2为72MHz 注意：TIM1 在APB2总线上。TIM2,TIM3,TIM4 在APB1总线上。
+    1.预分频系数为 1，则 TIM3定时器的时钟频率: APB1时钟频率 * 倍频器 / 预分频系数 =  36MHz * 1 / 1 = 36MHz
+    2.预分频系数为 2，则 TIM3定时器的时钟频率: APB1时钟频率 * 倍频器 / 预分频系数 =  36MHz * 2 / 2 = 36MHz
+    3.预分频系数为 72，则 TIM3定时器的时钟频率: APB1时钟频率 * 倍频器 / 预分频系数 =  36MHz * 2 / 72 = 1MHz
+    */
 	TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;  
 	NVIC_InitTypeDef NVIC_InitStructure;
 

@@ -1,5 +1,6 @@
 #include "stm32f10x.h"                  // Device header
 #include "PWM.h"
+#include "Timer.h"
 
 /**
   * 函    数：PWM初始化 电机
@@ -56,7 +57,6 @@ void PWM_Init_Motor(void)
 void PWM_Init_Servo(void)
 {
 	/*开启时钟*/
-	SG90_TIM_APBX(SG90_TIM_CLK, ENABLE);			//开启TIM1的时钟
 	SG90_GPIO_APBX(SG90_GPIO_CLK, ENABLE);			//开启GPIOA的时钟
 	
 	/*GPIO初始化*/
@@ -66,17 +66,6 @@ void PWM_Init_Servo(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(SG90_GPIO_PORT, &GPIO_InitStructure);							//将PA2引脚初始化为复用推挽输出	
 																	//受外设控制的引脚，均需要配置为复用模式
-	/*配置时钟源*/
-	TIM_InternalClockConfig(SG90_TIM);		//选择TIM1为内部时钟，若不调用此函数，TIM默认也为内部时钟
-	
-	/*时基单元初始化*/
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;				//定义结构体变量
-	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;     //时钟分频，选择不分频，此参数用于配置滤波器时钟，不影响时基单元功能
-	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up; //计数器模式，选择向上计数
-	TIM_TimeBaseInitStructure.TIM_Period = 20000 - 1;                 //计数周期，即ARR的值
-	TIM_TimeBaseInitStructure.TIM_Prescaler = 72 - 1;               //预分频器，即PSC的值
-	//TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;            //重复计数器，高级定时器才会用到
-	TIM_TimeBaseInit(SG90_TIM, &TIM_TimeBaseInitStructure);             //将结构体变量交给TIM_TimeBaseInit，配置TIM1的时基单元
 
 	/*输出比较初始化*/ 
 	TIM_OCInitTypeDef TIM_OCInitStructure;							//定义结构体变量
@@ -95,8 +84,7 @@ void PWM_Init_Servo(void)
     /* 高级定时器需要使能主输出 */
     TIM_CtrlPWMOutputs(SG90_TIM, ENABLE);
 
-	/*TIM使能*/
-	TIM_Cmd(SG90_TIM, ENABLE);			//使能TIM1，定时器开始运行
+	TIM_Servo();
 }
 
 /* TIM1 和 TIM2 各自的通道是独立的，能同时使用 通道1 */

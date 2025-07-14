@@ -1,29 +1,51 @@
 #include "stm32f10x.h"                  // Device header
 #include "IR_Nec.h"
-
+#include "Timer.h"
 
 /* ------------------ 用户可修改的宏 ------------------ */
 
-#define IR_TIM_APBX       RCC_APB1PeriphClockCmd
-#define IR_TIM_CLK        RCC_APB1Periph_TIM3
 #define IR_GPIO_APBX      RCC_APB2PeriphClockCmd
-#define IR_GPIO_CLK       RCC_APB2Periph_GPIOC       /* GPIO时钟 */
-#define IR_GPIO_PORT      GPIOC	                     /* GPIO端口 */
-#define IR_GPIO_PIN       GPIO_Pin_15
-#define IR_TIM    	      TIM3		                /* 定时器1 */
+#define IR_GPIO_CLK       RCC_APB2Periph_GPIOA       /* GPIO时钟 */
+#define IR_GPIO_PORT      GPIOA	                     /* GPIO端口 */
+#define IR_GPIO_PIN       GPIO_Pin_8
+#define IR_TIM    	      TIM1		                /* 定时器1 */
 #define IR_IN_EXTI_Port   GPIO_PortSourceGPIOC        /* 外部中断 */
 #define IR_IN_EXTI_Pin    GPIO_PinSource15
 #define IR_IN_EXTI_Line   EXTI_Line15
 #define IR_IN_EXTI_IRQN   EXTI15_10_IRQn
 #define IR_EXTI_IRQHandler EXTI15_10_IRQHandler
-#define IR_TIM_IRn     TIM3_IRQn  /* TIM更新中断 */
-#define IR_TIM_IRQHandler  TIM3_IRQHandler
+#define IR_TIM_UPDATE_IRQn     TIM1_UP_IRQn  /* TIM更新中断 */
+#define IR_TIM_UPDATE_IRQHandler  TIM1_UP_IRQHandler
+#define IR_TIM_CC_IRQn     TIM1_CC_IRQn  /* TIM更新中断 */
+#define IR_TIM_CC_IRQHandler  TIM1_CC_IRQHandler
+
+#define  RX_SEQ_NUM  33
 /* --------------------------------------------------- */
 
-
 /* 全局变量 */
+static uint8_t  cap_pol          = 0; //捕获电平类型1-上升沿或0-下降沿
+static uint8_t  cap_pulse_cnt    = 0;//捕获到的计数
+static volatile uint32_t ir_overflow = 0;//溢出次数
 static volatile uint32_t ir_count = 0;
 static volatile uint8_t  ir_state   = 0;   /* 0/1/2 */
+
+static uint16_t rx_frame[RX_SEQ_NUM*2] = {0}; 
+
+struct {
+    uint16_t  src_data[RX_SEQ_NUM*2];
+    uint16_t  repet_cnt;
+    union{
+        uint32_t rev;
+        struct
+        {
+            uint32_t key_val_n:8;
+            uint32_t key_val  :8;
+            uint32_t addr_n   :8;
+            uint32_t addr     :8;
+        }_rev;
+    }data;
+}rx;
+
 static volatile uint8_t  ir_bits    = 0;
 static volatile uint8_t  ir_buf[4]  = {0};
 static volatile uint8_t  ir_dataFlag   = 0;
@@ -31,33 +53,6 @@ static volatile uint8_t  ir_repeatFlag = 0;
 static volatile uint8_t  ir_addr = 0;
 static volatile uint8_t  ir_cmd  = 0;
 static const uint32_t ir_diff = 500;
-
-void IR_TIM_Init(void)
-{
-    // APB1 是 36MHz 但是定时器的时钟频率计算是根据 （预分频系数、倍频器 决定的）。
-    /* 当预分频系数等于1时，倍频器不x2，等预分频系数不等于1时，倍频器x2 
-    举例：系统时钟72MHz,APB1 为36MHz，APB2为72MHz 注意：TIM1 在APB2总线上。TIM2,TIM3,TIM4 在APB1总线上。
-    1.预分频系数为 1，则 TIM3定时器的时钟频率: APB1时钟频率 * 倍频器 / 预分频系数 =  36MHz * 1 / 1 = 36MHz
-    2.预分频系数为 2，则 TIM3定时器的时钟频率: APB1时钟频率 * 倍频器 / 预分频系数 =  36MHz * 2 / 2 = 36MHz
-    3.预分频系数为 72，则 TIM3定时器的时钟频率: APB1时钟频率 * 倍频器 / 预分频系数 =  36MHz * 2 / 72 = 1MHz
-    */
-	IR_TIM_APBX(IR_TIM_CLK, ENABLE);			//开启TIM1的时钟
-	
-	/*配置时钟源*/
-	TIM_InternalClockConfig(IR_TIM);		//选择TIM1为内部时钟，若不调用此函数，TIM默认也为内部时钟
-	
-	/*时基单元初始化*/
-	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;				//定义结构体变量
-	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;     //时钟分频，选择不分频，此参数用于配置滤波器时钟，不影响时基单元功能
-	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up; //计数器模式，选择向上计数
-	TIM_TimeBaseInitStructure.TIM_Period = 1000-1;                 //计数周期，即ARR的值  1个技术周期的时间是 0.001ms*1000 = 1ms
-	TIM_TimeBaseInitStructure.TIM_Prescaler = 72 - 1;               //预分频器，即PSC的值 频率1MHz 时间就是 1000ms/1000000 = 0.001 ms
-	TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;            //重复计数器，高级定时器才会用到
-	TIM_TimeBaseInit(IR_TIM, &TIM_TimeBaseInitStructure);             //将结构体变量交给TIM_TimeBaseInit，配置TIM1的时基单元
-
-	/*TIM使能*/
-    TIM_Cmd(IR_TIM, DISABLE);//注意:先不开启
-}
 
 /**
   * @brief  红外遥控初始化
@@ -77,38 +72,42 @@ void IR_Nec_Init(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(IR_GPIO_PORT, &GPIO_InitStructure);							
 																	//受外设控制的引脚，均需要配置为复用模式
-	/* 选择EXTI的信号源 */
-	GPIO_EXTILineConfig(IR_IN_EXTI_Port, IR_IN_EXTI_Pin);	
-	EXTI_InitTypeDef EXTI_InitStructure;
-	EXTI_InitStructure.EXTI_Line = IR_IN_EXTI_Line;		
-	/* EXTI为中断模式 */
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	/* 下降沿中断 */
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-	/* 使能中断 */	
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
+    /*输入捕获初始化*/
+	TIM_ICInitTypeDef TIM_ICInitStructure;							//定义结构体变量
+	TIM_ICInitStructure.TIM_Channel = TIM_Channel_1;				//选择配置定时器通道1
+	TIM_ICInitStructure.TIM_ICFilter = 0xF;							//输入滤波器参数，可以过滤信号抖动
+	TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;		//极性，选择为上升沿触发捕获
+	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;			//捕获预分频，选择不分频，每次信号都触发捕获
+	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;	//输入信号交叉，选择直通，不交叉
+	TIM_ICInit(IR_TIM, &TIM_ICInitStructure);							//将结构体变量交给TIM_ICInit，配置TIM3的输入捕获通道
 
-	/* NVIC */
-	NVIC_InitTypeDef NVIC_InitStructure;					//定义结构体变量
-    NVIC_InitStructure.NVIC_IRQChannel = IR_IN_EXTI_IRQN;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority        = 1;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+	/*选择触发源及从模式*/
+	TIM_SelectInputTrigger(IR_TIM, TIM_TS_TI1FP1);					//触发源选择TI1FP1
+	TIM_SelectSlaveMode(IR_TIM, TIM_SlaveMode_Reset);					//从模式选择复位
+																	//即TI1产生上升沿时，会触发CNT归零
+    
 
 	// /* 允许更新中断 */
     TIM_ITConfig(IR_TIM, TIM_IT_Update, ENABLE);
+    TIM_ITConfig(IR_TIM, TIM_IT_CC1, ENABLE);
 
 	/* TIM1 Update NVIC */
-	NVIC_InitTypeDef nvic_tim;
-	nvic_tim.NVIC_IRQChannel                   = IR_TIM_IRn;
-	nvic_tim.NVIC_IRQChannelPreemptionPriority = 2;
-	nvic_tim.NVIC_IRQChannelSubPriority        = 2;
-	nvic_tim.NVIC_IRQChannelCmd                = ENABLE;
-	NVIC_Init(&nvic_tim);
+	NVIC_InitTypeDef TIM_ICInitStructure;
+	TIM_ICInitStructure.NVIC_IRQChannel                   = IR_TIM_UPDATE_IRQn;
+	TIM_ICInitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	TIM_ICInitStructure.NVIC_IRQChannelSubPriority        = 2;
+	TIM_ICInitStructure.NVIC_IRQChannelCmd                = ENABLE;
+	NVIC_Init(&TIM_ICInitStructure);
 
-	IR_TIM_Init();
+    NVIC_InitTypeDef TIM_ICInitStructure;
+	TIM_ICInitStructure.NVIC_IRQChannel                   = IR_TIM_UPDATE_IRQn;
+	TIM_ICInitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	TIM_ICInitStructure.NVIC_IRQChannelSubPriority        = 2;
+	TIM_ICInitStructure.NVIC_IRQChannelCmd                = ENABLE;
+	NVIC_Init(&TIM_ICInitStructure);
+
+
+	TIM_IR_NEC();
 }
 
 /* -------------------- 查询接口 -------------------- */
@@ -137,111 +136,197 @@ uint8_t IR_GetCommand(void)
 }
 /* -------------------- 查询接口 -------------------- */
 
-void IR_TIM_IRQHandler(void)
+//读取通道1捕获的值
+uint16_t IR_TIM_GetCapture1()
+{
+    return TIM_GetCapture1(IR_TIM);
+}
+
+uint16_t IR_TIM_GetCapture1()
+{
+    return TIM_GetCapture1(IR_TIM);
+}
+
+void rx_rcv_init(void)
+{
+    ir_dataFlag     = 0;                                       //未捕获到新数据
+    ir_state      = 0;                                       //非空闲状态
+    ir_overflow   = 0;                                       //定时器溢出清0
+    cap_pulse_cnt = 0;                                       //捕获到的计数清0
+    
+    memset(rx_frame,0x00,sizeof(rx_frame));
+}
+
+void IR_TIM_UPDATE_IRQHandler(void)
 {
     if (TIM_GetITStatus(IR_TIM, TIM_IT_Update) != RESET)
     {
+        if (ir_state == 1) //非空闲状态
+        {
+            ir_overflow++;
+            if (ir_overflow == 3)
+            {
+                ir_overflow = 0;
+                ir_state    = 0;
+                ir_dataFlag   = 1;
+            }
+        }
+
         TIM_ClearITPendingBit(IR_TIM, TIM_IT_Update);
-		ir_count++;//计数器累加
     }
 }
 
-//打开定时器3
-static void OpenTimerForIR()  
-{
-   TIM_Cmd(IR_TIM, ENABLE); 
-}
 
-static void SetTimerCountForIR(uint16_t count)  
+void IR_TIM_CC_IRQHandler(void)
 {
-   TIM_SetCounter(IR_TIM,count);
-}
-
-//关闭定时器3
-static void CloseTimerForIR()    
-{
-   TIM_Cmd(IR_TIM, DISABLE); 
-}
-
-//获取定时器3计数器值
-uint32_t GetTimerCountForIR(void)
-{
-   uint32_t t = 0;
-   t = ir_count*1000;
-   t += TIM_GetCounter(IR_TIM);
-   IR_TIM->CNT = 0;  //计数器归零
-   return t;
-}
-
-//外部中断函数
-void IR_EXTI_IRQHandler(void)
-{
-	if (EXTI_GetITStatus(IR_IN_EXTI_Line) != RESET)
+    static uint16_t tmp_cnt_l, tmp_cnt_h;
+    if (TIM_GetITStatus(IR_TIM, TIM_IT_CC1) != RESET)
     {
-        EXTI_ClearITPendingBit(IR_IN_EXTI_Line);
-        uint32_t t = 0;
-
-        switch (ir_state)
-        {
-            case 0:                 /* 空闲，等待同步头 */
-                SetTimerCountForIR(0);//定时计数器清0
-                OpenTimerForIR();//打开定时器
-                ir_state = 1;
-                break;
-            case 1:                 /* 判断 Start/Repeat */
-                t = GetTimerCountForIR();//获取上一次中断到此次中断的时间
-                SetTimerCountForIR(0);//定时计数器清0
-                if (t > 13500 - ir_diff && t < 13500 + ir_diff)       /* Start 13.5ms */
+        switch(cap_pol)
+        {   
+            case 0:/* 捕获到下降沿 */
+                tmp_cnt_l = IR_TIM_GetCapture1();
+                TIM_ITConfig(TIM1, TIM_IT_CC1, DISABLE);
+                TIM_SlaveConfig(TIM1, 0, TIM_SlaveMode_Reset, TIM_ICPolarity_Rising);
+                TIM_ITConfig(TIM1, TIM_IT_CC1, ENABLE);
+                cap_pol = 1;
+                if (ir_state == 0)
                 {
-                    ir_state = 2;
-                }
-                else if (t > 11250 - ir_diff && t < 11250 + ir_diff)  /* Repeat 11.25ms */
-                {
-                    ir_repeatFlag = 1;
-                    CloseTimerForIR();//定时器停止
-                    ir_state = 0;
-                }
-                else //接收出错
-                {
-                    ir_state = 1;   /* 状态置为1 */
-                }
-                break;
-            case 2:                 /* 状态2，接收数据 接收 32 bit 数据 */
-                t = GetTimerCountForIR();//获取上一次中断到此次中断的时间
-                SetTimerCountForIR(0);//定时计数器清0
-                if (t > 1120 - ir_diff && t < 1120 + ir_diff)        /* 逻辑0 ~1.12ms */
-                {
-                    ir_buf[ir_bits / 8] &= ~(1 << (ir_bits % 8));
-                    ir_bits++;
-                }
-                else if (t > 2250 - ir_diff && t < 2250 + ir_diff)   /* 逻辑1 ~2.25ms */
-                {
-                    ir_buf[ir_bits / 8] |=  (1 << (ir_bits % 8));
-                    ir_bits++;
-                }
-                else
-                {
-                    ir_bits = 0;//数据位置清0
-                    ir_state = 1;   /* 状态置为1 */
+                    rx_rcv_init();
                     break;
                 }
-
-                //如果接收到了32位数据
-                if (ir_bits >= 32)
+                rx_frame[cap_pulse_cnt] = ir_overflow * 20000 + tmp_cnt_l - tmp_cnt_h;
+                ir_overflow = 0;
+                printf("(%2d)%4d us:H\r\n", cap_pulse_cnt, rx_frame[cap_pulse_cnt]);
+                cap_pulse_cnt++;
+                break;
+            
+            case 1:/* 捕获到上升沿 */
+                tmp_cnt_h = TIM_GetCapture1(TIM1);
+                TIM_ITConfig(TIM1, TIM_IT_CC1, DISABLE);
+                TIM_SlaveConfig(TIM1, 0, TIM_SlaveMode_Reset, TIM_ICPolarity_Falling);
+                TIM_ITConfig(TIM1, TIM_IT_CC1, ENABLE);
+                cap_pol = 0;
+                if (ir_state == 0)
                 {
-                    ir_bits = 0;
-                    /* 校验 */
-                    if ((ir_buf[0] == (uint8_t)~ir_buf[1]) &&
-                        (ir_buf[2] == (uint8_t)~ir_buf[3]))
-                    {
-                        ir_addr = ir_buf[0];
-                        ir_cmd  = ir_buf[2];
-                        ir_dataFlag = 1;
-                    }
-                    CloseTimerForIR();//定时器停止
-                    ir_state = 0;
+                    rx_rcv_init();
+                    break;
                 }
+                rx_frame[cap_pulse_cnt] = ir_overflow * 20000 + tmp_cnt_h - tmp_cnt_l;
+                ir_overflow = 0;
+                printf("(%2d)%4d us:L\r\n", cap_pulse_cnt, rx_frame[cap_pulse_cnt]);
+                cap_pulse_cnt++;
+                break;
+            
+            default:
                 break;
         }
+        TIM_ClearITPendingBit(TIM1, TIM_IT_CC1);
     }
 }
+
+uint8_t hx1838_data_decode(void)
+{
+    memcpy(rx.src_data,rx_frame,RX_SEQ_NUM*4);
+    memset(rx_frame,0x00,RX_SEQ_NUM*4);   
+    printf("========= rx.src[] =================\r\n");
+    for(uint8_t i = 0;i<=(RX_SEQ_NUM*2);i++)
+    {
+        printf("[%d]%d\r\n",i,rx.src_data[i]);
+    }
+    printf("========= rx.rec =================\r\n");
+    if(appro(rx.src_data[0],9000) && appro(rx.src_data[1],4500))                 //#1. 检测前导码
+    {
+        uint8_t tmp_idx = 0;
+        rx.repet_cnt  = 0;                                                       //按键重复个数清0
+        for(uint8_t i = 2;i<(RX_SEQ_NUM*2);i++)                                  //#2. 检测数据
+        {
+            if(!appro(rx.src_data[i],560))
+            {
+                printf("%d,err:%d != 560\r\n",i,rx.src_data[i]);
+                return 0;
+            }
+            i++;
+            if(appro(rx.src_data[i],1680))
+            {
+                rx.data.rev |= (0x80000000 >> tmp_idx);                          //第 tmp_idx 为置1
+                tmp_idx++;
+            }
+            else if(appro(rx.src_data[i],560))
+            {
+                rx.data.rev &= ~(0x80000000 >> tmp_idx);                         //第 tmp_idx 位清0
+                tmp_idx++;
+            }
+            else
+            {
+                printf("%d,err:%d != 560||1680\r\n",i,rx.src_data[i+1]);
+                return 0;
+            }
+        }
+    }
+    else if(appro(rx.src_data[0],9000) && appro(rx.src_data[1],2250) && appro(rx.src_data[2],560))
+    {
+        rx.repet_cnt++;
+        return 2;
+    }
+    else
+    {
+        printf("前导码检测错误\r\n");
+        return 0;
+    }
+    return 1;
+}
+
+uint8_t hx1838_proc(uint8_t res)
+{
+    uint8_t RxData = 0;
+    if(res == 0)
+    {    
+        return;
+    }
+    
+    if(res == 2)
+    {   
+        return;
+    }
+    //编码转换为操作指令
+    switch(rx.data._rev.key_val)
+    {
+        case 11:
+            RxData = 1;
+            break;
+        case 12:
+            RxData = 2;
+            break;
+        case 13:
+            RxData = 3;
+            break;
+        case 14:
+            RxData = 4;
+            break;
+        case 15:
+            RxData = 5;
+            break;
+        default:   
+            break;
+        
+    }
+    return RxData;
+}
+
+
+// void HX1838_demo(void)
+// {
+//     hx1838_cap_start();//定时器1通道1，输入捕获
+//     while(1)
+//     {
+//         if(cap_frame)//标记捕获到新的数据
+//         {   
+//             hx1838_proc(hx1838_data_decode());//解析数据
+//             cap_frame = 0;
+						
+		
+//         }
+//     }
+    
+// }
