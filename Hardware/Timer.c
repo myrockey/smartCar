@@ -24,7 +24,7 @@ void TIM_Servo(void)
 /*红外遥控定时器 */
 void TIM_IR_NEC(void)
 {
-	TIM_Init_Servo();
+	TIM_Servo();
 }
 
 /* 超声波模块-定时器 */
