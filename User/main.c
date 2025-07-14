@@ -94,10 +94,18 @@ int main(void)
 		trackingVal = (L * 100)+ (M * 10) + (R * 1);
 		OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 		
+		if (IR_GetDataFlag())          // 收到红外遥控的完整数据帧
+		{
+			RxData = IR_GetData();
+		}
+
 		// 接收到数据
 		if(Serial_GetRxFlag() == 1)
 		{
 			RxData = Serial_GetRxData();
+		}
+
+		if(RxData){
 			OLED_ShowNum(1,14,RxData,2);//显示接收的参数
 		}
 

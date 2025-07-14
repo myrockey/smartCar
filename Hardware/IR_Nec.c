@@ -19,6 +19,12 @@
 #define IR_TIM_CC_IRQn     TIM1_CC_IRQn  /* TIM更新中断 */
 #define IR_TIM_CC_IRQHandler  TIM1_CC_IRQHandler
 
+#define IR_UP    0x18
+#define IR_DOWN  0x52
+#define IR_OK    0x1C
+#define IR_LEFT  0x08
+#define IR_RIGHT 0x5A
+
 #define  RX_SEQ_NUM  33
 /* --------------------------------------------------- */
 
@@ -82,10 +88,11 @@ void IR_Nec_Init(void)
 	TIM_ICInit(IR_TIM, &TIM_ICInitStructure);							//将结构体变量交给TIM_ICInit，配置TIM3的输入捕获通道
 
 	/*选择触发源及从模式*/
-	TIM_SelectInputTrigger(IR_TIM, TIM_TS_TI1FP1);					//触发源选择TI1FP1
-	TIM_SelectSlaveMode(IR_TIM, TIM_SlaveMode_Reset);					//从模式选择复位
+	 TIM_SelectInputTrigger(IR_TIM, TIM_TS_TI1FP1);					//触发源选择TI1FP1
+	 TIM_SelectSlaveMode(IR_TIM, TIM_SlaveMode_Reset);					//从模式选择复位
 																	//即TI1产生上升沿时，会触发CNT归零
-    
+    /* 5. 使能从模式 */
+    TIM_SelectMasterSlaveMode(TIM1, TIM_MasterSlaveMode_Enable);
 
 	// /* 允许更新中断 */
     TIM_ITConfig(IR_TIM, TIM_IT_Update, ENABLE);
@@ -97,6 +104,33 @@ void IR_Nec_Init(void)
 	TIM_IR_NEC();
 }
 
+void TIM_SET_ITConfig(uint16_t TIM_ICPolarity)
+{
+    /* 1. 关闭 CC1 中断 */
+    TIM_ITConfig(TIM1, TIM_IT_CC1, DISABLE);
+
+    /* 2. 配置通道 1：上升沿捕获 */
+    TIM_ICInitTypeDef  TIM_ICInitStructure;
+    TIM_ICInitStructure.TIM_Channel     = TIM_Channel_1;
+    TIM_ICInitStructure.TIM_ICPolarity  = TIM_ICPolarity;   // ← 这里设置极性
+    TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+    TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+    TIM_ICInitStructure.TIM_ICFilter    = 0xF;
+    TIM_ICInit(TIM1, &TIM_ICInitStructure);
+
+    /* 3. 触发源 TI1FP1（已含上升沿极性） */
+    TIM_SelectInputTrigger(TIM1, TIM_TS_TI1FP1);
+
+    /* 4. 从模式 Reset */
+    TIM_SelectSlaveMode(TIM1, TIM_SlaveMode_Reset);
+
+    /* 5. 使能从模式 */
+    TIM_SelectMasterSlaveMode(TIM1, TIM_MasterSlaveMode_Enable);
+
+    /* 6. 重新使能 CC1 中断 */
+    TIM_ITConfig(TIM1, TIM_IT_CC1, ENABLE);
+
+}
 /* -------------------- 查询接口 -------------------- */
 uint8_t IR_GetDataFlag(void)
 {
@@ -117,10 +151,47 @@ uint8_t IR_GetAddress(void)
 	return ir_addr; 
 }
 
+//声明
+uint8_t hx1838_data_decode(void);
+
 uint8_t IR_GetCommand(void)  
 { 
-	return ir_cmd;  
+    uint8_t res = hx1838_data_decode();
+    //准确获取数据
+    if(res == 1)
+    {
+        ir_cmd = rx.data._rev.key_val;
+    }
+	return ir_cmd;
 }
+
+uint8_t IR_GetData(void)  
+{ 
+    uint8_t res = 0;
+    uint8_t cmd = IR_GetCommand();
+    switch (cmd)
+    {
+        case IR_UP:
+            res = 1;
+            break;
+        case IR_DOWN:
+            res = 2;
+            break;
+        case IR_OK:
+            res = 3;
+            break;
+        case IR_LEFT:
+            res = 4;
+            break;
+        case IR_RIGHT:
+            res = 5;
+            break;
+        default:
+            break;
+    }
+	return res;
+}
+
 /* -------------------- 查询接口 -------------------- */
 
 //读取通道1捕获的值
@@ -132,7 +203,7 @@ uint16_t IR_TIM_GetCapture1()
 void rx_rcv_init(void)
 {
     ir_dataFlag     = 0;                                       //未捕获到新数据
-    ir_state      = 0;                                       //非空闲状态
+    ir_state      = 1;                                       //非空闲状态
     ir_overflow   = 0;                                       //定时器溢出清0
     cap_pulse_cnt = 0;                                       //捕获到的计数清0
     
@@ -143,21 +214,20 @@ void IR_TIM_UPDATE_IRQHandler(void)
 {
     if (TIM_GetITStatus(IR_TIM, TIM_IT_Update) != RESET)
     {
-        if (ir_state == 1) //非空闲状态
+        if (ir_state != 0) //非空闲状态
         {
             ir_overflow++;
-            if (ir_overflow == 3)
+            if (ir_overflow == 2)//溢出1次，就够了，说明超过20ms,已收到数据
             {
                 ir_overflow = 0;
                 ir_state    = 0;
-                ir_dataFlag   = 1;
+                ir_dataFlag = 1;
             }
         }
 
         TIM_ClearITPendingBit(IR_TIM, TIM_IT_Update);
     }
 }
-
 
 void IR_TIM_CC_IRQHandler(void)
 {
@@ -168,9 +238,8 @@ void IR_TIM_CC_IRQHandler(void)
         {   
             case 0:/* 捕获到下降沿 */
                 tmp_cnt_l = IR_TIM_GetCapture1();
-                TIM_ITConfig(TIM1, TIM_IT_CC1, DISABLE);
-                TIM_SlaveConfig(TIM1, 0, TIM_SlaveMode_Reset, TIM_ICPolarity_Rising);
-                TIM_ITConfig(TIM1, TIM_IT_CC1, ENABLE);
+                TIM_SET_ITConfig(TIM_ICPolarity_Rising);
+
                 cap_pol = 1;
                 if (ir_state == 0)
                 {
@@ -185,9 +254,7 @@ void IR_TIM_CC_IRQHandler(void)
             
             case 1:/* 捕获到上升沿 */
                 tmp_cnt_h = TIM_GetCapture1(TIM1);
-                TIM_ITConfig(TIM1, TIM_IT_CC1, DISABLE);
-                TIM_SlaveConfig(TIM1, 0, TIM_SlaveMode_Reset, TIM_ICPolarity_Falling);
-                TIM_ITConfig(TIM1, TIM_IT_CC1, ENABLE);
+                TIM_SET_ITConfig(TIM_ICPolarity_Falling);
                 cap_pol = 0;
                 if (ir_state == 0)
                 {
@@ -205,6 +272,11 @@ void IR_TIM_CC_IRQHandler(void)
         }
         TIM_ClearITPendingBit(TIM1, TIM_IT_CC1);
     }
+}
+
+uint8_t appro(int num1,int num2)
+{
+    return (abs(num1-num2) < 300);
 }
 
 uint8_t hx1838_data_decode(void)
@@ -258,57 +330,3 @@ uint8_t hx1838_data_decode(void)
     }
     return 1;
 }
-
-uint8_t hx1838_proc(uint8_t res)
-{
-    uint8_t RxData = 0;
-    if(res == 0)
-    {    
-        return;
-    }
-    
-    if(res == 2)
-    {   
-        return;
-    }
-    //编码转换为操作指令
-    switch(rx.data._rev.key_val)
-    {
-        case 11:
-            RxData = 1;
-            break;
-        case 12:
-            RxData = 2;
-            break;
-        case 13:
-            RxData = 3;
-            break;
-        case 14:
-            RxData = 4;
-            break;
-        case 15:
-            RxData = 5;
-            break;
-        default:   
-            break;
-        
-    }
-    return RxData;
-}
-
-
-// void HX1838_demo(void)
-// {
-//     hx1838_cap_start();//定时器1通道1，输入捕获
-//     while(1)
-//     {
-//         if(cap_frame)//标记捕获到新的数据
-//         {   
-//             hx1838_proc(hx1838_data_decode());//解析数据
-//             cap_frame = 0;
-						
-		
-//         }
-//     }
-    
-// }
