@@ -3,6 +3,7 @@
 #include "Timer.h"
 
 /* 全局变量 */
+uint8_t ir_timer_flag = 0;//定时器开始计数标志
 static volatile uint32_t ir_count = 0;//中断溢出次数
 static volatile uint32_t ir_lastCnt = 0;//上次的计数
 static volatile uint32_t ir_currentCnt = 0;//本次的计数
@@ -95,12 +96,12 @@ void IR_TIM_UPDATE_IRQHandler(void)
     if (TIM_GetITStatus(IR_TIM, TIM_IT_Update) != RESET)
     {
         TIM_ClearITPendingBit(IR_TIM, TIM_IT_Update);
-        if(ir_state != 0){
+        // if(ir_state != 0){
+        if(ir_timer_flag == 1){
 		    ir_count++;//溢出计数累加
         }
     }
 }
-
 
 //打开定时器3
 static void OpenTimerForIR()  
@@ -108,12 +109,14 @@ static void OpenTimerForIR()
     ir_count = 0;//溢出次数清0
     ir_lastCnt = 0;//上次读数
     ir_currentCnt = 0;//本次读数
+
+    ir_timer_flag = 1;
 }
 
 //关闭定时器3
 static void CloseTimerForIR()    
 {
-
+    ir_timer_flag = 0;
 }
 
 //由于不直接对定时器的CNT清0
