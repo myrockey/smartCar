@@ -9,6 +9,7 @@ void TIM_Servo(void)
 	/*配置时钟源*/
 	TIM_InternalClockConfig(SG90_TIM);		//选择TIM1为内部时钟，若不调用此函数，TIM默认也为内部时钟
 	
+	TIM_DeInit(SG90_TIM);
 	/*时基单元初始化*/
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;				//定义结构体变量
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;     //时钟分频，选择不分频，此参数用于配置滤波器时钟，不影响时基单元功能
