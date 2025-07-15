@@ -354,7 +354,7 @@ void WIFI_Receive_Task(uint8_t* RxData)
 		// ping状态，mqtt连接成功
 		//+MQTTCONN:0,6,1,"gz-3-mqtt.iot-api.com","1883","",1\r\n\r\nOK
 		if (strstr((const char*)received_str, "+MQTTCONN:0,6") != NULL && strstr((const char*)received_str, "OK") != NULL) {
-			printf("PING报文回复\r\n");                       
+			printf("PING success\r\n");                       
 			if(pingFlag == 1)
 			{                   						     //如果pingFlag=1，表示第一次发送
 				pingFlag = 0;    				       		 //要清除pingFlag标志
@@ -369,7 +369,7 @@ void WIFI_Receive_Task(uint8_t* RxData)
 		
 		// 获取远程命令(TODO:待完善，接收的数据不完整。或调整设备传输数据类型为hex)
 		if(strstr((const char*)received_str, MQTT_ATTR_PUSH_SUB) != NULL && strstr((const char*)received_str, "temp") != NULL){
-			printf("服务器下发的数据:%s \r\n",received_str); 		   	 //串口输出信息
+			printf("IOT push data:%s \r\n",received_str); 		   	 //串口输出信息
 			char json[128];
 			extract_json((const char*)received_str, json);
 			/* 解析整段JSO数据 */
