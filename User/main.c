@@ -22,7 +22,6 @@
 
 cJSON* cjson_test = NULL;//json
 cJSON* cjson_params = NULL;
-cJSON* cjson_params_state = NULL;
 
 uint8_t RxData;//串口接收数据的变量
 uint8_t RxDataClearFlag;//串口接收的数据已读后是否清除标志位 0-不清除，1-清除
@@ -369,7 +368,7 @@ void WIFI_Receive_Task(uint8_t* RxData)
 		}
 		
 		// 获取远程命令(TODO:待完善，接收的数据不完整。或调整设备传输数据类型为hex)
-		if(strstr((const char*)received_str, "getValue") != NULL && strstr((const char*)received_str, "state") != NULL){
+		if(strstr((const char*)received_str, MQTT_ATTR_PUSH_SUB) != NULL && strstr((const char*)received_str, "temp") != NULL){
 			printf("服务器下发的数据:%s \r\n",received_str); 		   	 //串口输出信息
 			char json[128];
 			extract_json((const char*)received_str, json);
@@ -381,9 +380,8 @@ void WIFI_Receive_Task(uint8_t* RxData)
 				return;
 			}
 			/* 依次根据名称提取JSON数据（键值对） */
-			cjson_params = cJSON_GetObjectItem(cjson_test, "params");
-			cjson_params_state = cJSON_GetObjectItem(cjson_params, "state");
-			*RxData = (uint8_t)cjson_params_state->valueint;
+			cjson_params = cJSON_GetObjectItem(cjson_test, "temp");
+			*RxData = (uint8_t)cjson_params->valueint;
 		}
 	}
 }
