@@ -123,6 +123,7 @@ int main(void)
 void BSP_Init(void)
 {
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);//配置NVIC中断为分组4
+	TIM1_Init();
 	OLED_Init();//显示屏初始化
 	SmartCar_Init();//电机驱动初始化
 	Bluetooth_Init();//蓝牙初始化

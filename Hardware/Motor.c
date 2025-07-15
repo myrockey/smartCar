@@ -1,6 +1,45 @@
 #include "stm32f10x.h"                  // Device header
 #include "Motor.h"
-#include "PWM.h"
+#include "Timer.h"
+
+/**
+  * 函    数：PWM初始化 电机
+  * 参    数：无
+  * 返 回 值：无
+  */
+void PWM_Init_Motor(void)
+{
+	/*开启时钟*/
+	TB6612_GPIO_APBX(TB6612_GPIO_CLK, ENABLE);			//开启GPIOA的时钟
+	
+	/*GPIO初始化*/
+	GPIO_InitTypeDef GPIO_InitStructure;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Pin = TB6612_GPIO_PIN_PWMA | TB6612_GPIO_PIN_PWMB;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(TB6612_GPIO_PORT, &GPIO_InitStructure);							//将PA2引脚初始化为复用推挽输出	
+																	//受外设控制的引脚，均需要配置为复用模式
+	TIM_Motor();
+}
+
+
+/* TIM1 和 TIM2 各自的通道是独立的，能同时使用 通道1 */
+/**
+  * 函    数：PWM设置CCR
+  * 参    数：Compare 要写入的CCR的值，范围：0~100
+  * 返 回 值：无
+  * 注意事项：CCR和ARR共同决定占空比，此函数仅设置CCR的值，并不直接是占空比
+  *           占空比Duty = CCR / (ARR + 1)
+  */
+void PWM_SetCompare2_Motor(uint16_t Compare)
+{
+	TIM_SetCompare2(TB6612_TIM, Compare);		//设置CCR2的值
+}
+
+void PWM_SetCompare1_Motor(uint16_t Compare)
+{
+	TIM_SetCompare1(TB6612_TIM, Compare);		//设置CCR4的值
+}
 
 void Motor_Init(void)
 {

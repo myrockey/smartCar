@@ -2,25 +2,6 @@
 #include "IR_Nec.h"
 #include "Timer.h"
 
-/* ------------------ 用户可修改的宏 ------------------ */
-
-#define IR_GPIO_APBX      RCC_APB2PeriphClockCmd
-#define IR_GPIO_CLK       RCC_APB2Periph_GPIOA       /* GPIO时钟 */
-#define IR_GPIO_PORT      GPIOA	                     /* GPIO端口 */
-#define IR_GPIO_PIN       GPIO_Pin_8
-#define IR_TIM    	      TIM1		                /* 定时器1 */
-#define IR_TIM_UPDATE_IRQn     TIM1_UP_IRQn  /* TIM更新中断 */
-#define IR_TIM_UPDATE_IRQHandler  TIM1_UP_IRQHandler
-#define IR_TIM_CC_IRQn     TIM1_CC_IRQn  /* TIM更新中断 */
-#define IR_TIM_CC_IRQHandler  TIM1_CC_IRQHandler
-/* --------------------------------------------------- */
-
-#define IR_UP    0x18
-#define IR_DOWN  0x52
-#define IR_OK    0x1C
-#define IR_LEFT  0x08
-#define IR_RIGHT 0x5A
-
 /* 全局变量 */
 static volatile uint32_t ir_count = 0;//中断溢出次数
 static volatile uint32_t ir_lastCnt = 0;//上次的计数
@@ -44,45 +25,15 @@ void IR_Nec_Init(void)
 	/*开启时钟*/
 	IR_GPIO_APBX(IR_GPIO_CLK, ENABLE);			//开启GPIOA的时钟
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-	
+
 	/*GPIO初始化*/
 	GPIO_InitTypeDef GPIO_InitStructure;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;//上拉输入模式
 	GPIO_InitStructure.GPIO_Pin = IR_GPIO_PIN;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(IR_GPIO_PORT, &GPIO_InitStructure);							
-																	//受外设控制的引脚，均需要配置为复用模式                                                  
-    /*输入捕获初始化*/
-	TIM_ICInitTypeDef TIM_ICInitStructure;							//定义结构体变量
-	TIM_ICInitStructure.TIM_Channel = TIM_Channel_1;				//选择配置定时器通道1
-	TIM_ICInitStructure.TIM_ICFilter = 0x03;//IC2F=0011 配置输入滤波器 8个定时器时钟周期滤波
-	TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Falling;		//极性，选择为下降沿触发捕获
-	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;			//捕获预分频，选择不分频，每次信号都触发捕获
-	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;	//输入信号交叉，选择直通，不交叉
-	TIM_ICInit(IR_TIM, &TIM_ICInitStructure);							//将结构体变量交给TIM_ICInit，配置TIM3的输入捕获通道
-
-    TIM_ClearFlag(IR_TIM, TIM_FLAG_Update | TIM_FLAG_CC1);; //清除中断和捕获标志位事件
-	// /* 允许更新中断 */
-    TIM_ITConfig(IR_TIM, TIM_IT_Update, ENABLE);
-    TIM_ITConfig(IR_TIM, TIM_IT_CC1, ENABLE);
-
-	/* TIM1 Update NVIC */
-    NVIC_InitTypeDef NVIC_InitStructure;
-    NVIC_InitStructure.NVIC_IRQChannel = TIM1_UP_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-    NVIC_InitStructure.NVIC_IRQChannel = IR_TIM_CC_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-	TIM_IR_NEC();
-
-    GPIO_SetBits(IR_GPIO_PORT, IR_GPIO_PIN);//置高电平
+																	//受外设控制的引脚，均需要配置为复用模式    
+    GPIO_SetBits(IR_GPIO_PORT, IR_GPIO_PIN);//置高电平  
 }
 
 /* -------------------- 查询接口 -------------------- */
@@ -175,7 +126,7 @@ void SetTimerCountForIR(uint16_t count)
 uint32_t GetTimerCountForIR(void)
 {
    uint32_t t = 0;
-   ir_currentCnt = ir_count*20000 + TIM_GetCounter(IR_TIM);
+   ir_currentCnt = ir_count*20000 + TIM_GetCapture1(IR_TIM);
    t = ir_currentCnt - ir_lastCnt;
    ir_lastCnt = ir_currentCnt;  //上次读数
    return t;

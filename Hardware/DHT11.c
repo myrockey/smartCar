@@ -13,7 +13,6 @@
 #include "Delay.h"      //包含需要的头文件
 
 
-
 /*函数名：初始化DHT11                              */	 
 void DHT11_Init(void)
 {
