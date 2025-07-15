@@ -279,14 +279,14 @@ void ESP8266_CheckMQTTStatus(void)
 void ESP8266_MQTT_Publish(char* message) {
     char cmd_buffer[CMD_BUFFER_SIZE];
 	//char message[] = "{\\\"temperature\\\":30}";
-	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+MQTTPUB=0,\"%s\",\"%s\",0,0\r\n",MQTT_TOPIC,message);
+	snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+MQTTPUB=0,\"%s\",\"%s\",0,0\r\n",MQTT_ATTR_PUB,message);
 	WIFI_SendString(cmd_buffer);
 	//Delay_ms(2000);
 }
 
 char ESP8266_MQTT_Subscribe(void) {
     char cmd_buffer[CMD_BUFFER_SIZE];
-    snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+MQTTSUB=0,\"%s\",0\r\n", MQTT_COMMAND_SUB);
+    snprintf(cmd_buffer, sizeof(cmd_buffer), "AT+MQTTSUB=0,\"%s\",0\r\n", MQTT_ATTR_PUSH_SUB);
     return ESP8266_WiFi_SendCmd(cmd_buffer,"OK",20);
 }
 

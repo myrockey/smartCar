@@ -18,8 +18,15 @@
 #define MQTT_CLIENT_PASSWORD "qDsJd0CqfV"
 #define MQTT_HOST "gz-3-mqtt.iot-api.com"
 #define MQTT_PORT 1883
-#define MQTT_TOPIC "attributes"
-#define MQTT_COMMAND_SUB "command/send/1000" //监听thingsCloud下发的命令
+
+//mqtt发布订阅相关
+#define MQTT_ATTR_PUB      "attributes" //设备上报属性
+#define MQTT_ATTR_SUB      "attributes/response" //设备上报属性后，设备等待接收平台响应
+#define MQTT_ATTR_GET_PUB  "attributes/get/1000" //设备获取平台属性
+#define MQTT_ATTR_GET_SUB  "attributes/get/response/1000" //设备发送获取平台属性后，设备等待接收平台响应
+#define MQTT_ATTR_PUSH_SUB "attributes/push" //监听thingsCloud下发的属性，设备接收平台下发的属性
+#define MQTT_COMMAND_SUB   "command/send/1000" //监听thingsCloud下发的命令
+#define MQTT_COMMAND_PUB   "command/reply/1000" // 平台下发命令后，设备回复平台
 #define MQTT_QoS 0
 #define MQTT_RETAIN 0 //0-不保留信息
 
