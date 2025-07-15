@@ -169,8 +169,6 @@ static void CloseTimerForIR()
 void SetTimerCountForIR(uint16_t count)
 {
     // ir_count = count;//溢出次数清0
-    // ir_lastCnt = 0;//上次读数
-    // ir_currentCnt = 0;//本次读数
 }
 
 //获取定时器的计数器值
