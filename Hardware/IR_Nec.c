@@ -3,7 +3,7 @@
 #include "Timer.h"
 
 /* 全局变量 */
-uint8_t ir_timer_flag = 0;//定时器开始计数标志
+static volatile uint8_t  ir_timer_flag = 0;//定时器开始计数标志
 static volatile uint32_t ir_count = 0;//中断溢出次数
 static volatile uint32_t ir_lastCnt = 0;//上次的计数
 static volatile uint32_t ir_currentCnt = 0;//本次的计数
