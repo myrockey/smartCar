@@ -203,10 +203,10 @@ void Voice_broadcast(uint8_t type)
 	switch(type)
 	{
 		case 10://LED ON
-			VoiceIdentify_SendByte(type);
+			VoiceIdentify_SendByte(0x0A);
 			break;
 		case 11://LED OFF
-			VoiceIdentify_SendByte(type);
+			VoiceIdentify_SendByte(0x0B);
 			break;
 	}
 }
@@ -355,6 +355,7 @@ uint8_t IR_Task(void)
 	if (IR_GetDataFlag())          // 收到红外遥控的完整数据帧
 	{
 		RxData = IR_GetData();
+		Voice_broadcast(RxData);
 	}
 
 	return 0;
