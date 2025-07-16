@@ -8,12 +8,11 @@
 #include "RingBuff.h"
 #include "Timer.h"
 #include "SmartCar.h"
-// #include "Serial.h"
 #include "Bluetooth.h"
 #include "Ultrasonic.h"
 #include "WIFI.h"
 #include "Tracking.h"
-// #include "Buzzer.h"
+#include "Buzzer.h"
 #include "DHT11.h"
 #include "LED.h"
 #include "Servo.h"
@@ -36,14 +35,40 @@ char str[16]; // 定义一个长度为16的字符数组作为字符串
 void BSP_Init(void);
 
 //根据参数，执行对应功能
-void Exec_Function(uint8_t type, char str[]);
-
+void Exec_Function(uint8_t type);
 //根据参数，播报语音
 void Voice_broadcast(uint8_t type);
-
 void WIFI_Run(uint8_t* wifiState);
 void WIFI_Receive_Task(uint8_t* RxData);
 void WIFI_Send_DHT(char *temp, char *humi);
+
+
+/************************** task **************************/
+// WIFI
+uint8_t WIFI_Task(void);
+// 红外遥控
+uint8_t IR_Task(void);
+// 蓝牙
+uint8_t Bluetooth_Task(void);
+// 语音识别
+uint8_t VoiceIdentify_Task(void);
+// 舵机
+void Servo_Task(uint8_t angle);
+//小车电机驱动
+void SmartCar_Task(uint8_t state);
+//LED
+void LED_Task(uint8_t state);
+// 自动循迹
+void Tracking_Task(void);
+//读取温度并上传到IOT服务器
+void DHT11_Task(void);
+//超声波测距
+void Ultrasonic_Distance_Task(void);
+// 超声波避障
+void Ultrasonic_Task(void);
+// 接收数据并执行操作
+uint8_t Receive_Task(void);
+/************************** task **************************/
 
 int main(void)
 {
@@ -53,8 +78,7 @@ int main(void)
 	OLED_ShowString(3,1,"J:");
 	OLED_ShowString(4,1,"T:");
 	
-	printf("IR NEC Decoder Ready\r\n");
-
+	// printf("IR NEC Decoder Ready\r\n");
 //    while (1)
 //    {
 //        if (IR_GetDataFlag())          // 收到完整数据帧
@@ -73,48 +97,29 @@ int main(void)
 	while(1)
 	{
 		//continue;
-		if(WIFI_CONNECT == 0)
+		if(WIFI_Task() != 0)
 		{
-			OLED_ShowString(1,4,"wifi CON.");
-		}
-		WIFI_Run(&wifiState);//WIFI运行
-		OLED_ShowNum(1,1,wifiState,2);//显示wifi连接状态值
-		
-		WIFI_Receive_Task(&RxData);//WIFI接收数据，并ping连接状态
-		//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
-		if(PING_MODE == 0)
-		{
-			printf("WIFI connect error\r\n");
-			OLED_ShowString(1,4,"wifi ERR");
 			continue;
 		}
-		//OLED_ShowString(1,4,"wifi OK ");
 
-		trackingVal = (L * 100)+ (M * 10) + (R * 1);
-		OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
-		
-		if (IR_GetDataFlag())          // 收到红外遥控的完整数据帧
+		if(IR_Task() != 0)
 		{
-			RxData = IR_GetData();
+			continue;
 		}
-
-		// 接收到数据
-		if(Serial_GetRxFlag() == 1)
-		{
-			RxData = Serial_GetRxData();
-		}
-
-		if(RxData){
-			OLED_ShowNum(1,14,RxData,2);//显示接收的参数
-		}
-
-		//Voice_broadcast(RxData);
-		Exec_Function(RxData, str);
-		OLED_ShowString(1,4,str);//显示执行的动作
 		
-		//清除上次接收的数据
-		if(RxDataClearFlag == 1){
-			RxData = 0;
+		if(Bluetooth_Task() != 0)
+		{
+			continue;
+		}
+		
+		if(VoiceIdentify_Task() != 0)
+		{
+			continue;
+		}
+		
+		if(Receive_Task() != 0)
+		{
+			continue;
 		}
 	}
 }
@@ -128,7 +133,7 @@ void BSP_Init(void)
 	Bluetooth_Init();//蓝牙初始化
 	Ultrasonic_Init();//超声波初始化
 	Tracking_Init();//循迹初始化
-	// Buzzer_Init();//蜂鸣器初始化
+	Buzzer_Init();//蜂鸣器初始化
 	DHT11_Init();
 	LED_Init();//LED初始化
 	WIFI_Init();
@@ -141,7 +146,7 @@ void BSP_Init(void)
 *根据参数，执行对应功能。
 具体原理：蓝牙模块或语音识别模块（发送方） 通过串口传输数据 stm32（接收方），根据接收的数据，执行对应功能。
 */
-void Exec_Function(uint8_t type, char str[])
+void Exec_Function(uint8_t type)
 {
 	//默认清除
 	if(RxData > 0){
@@ -150,110 +155,59 @@ void Exec_Function(uint8_t type, char str[])
 	switch(RxData)
 	{
 		case 1:
-			Move_Forward();
-			strcpy(str, "forword ");
+			SmartCar_Task(RxData);
 			break;
 		case 2:
-			Move_Backward();
-			strcpy(str, "backword");
+			SmartCar_Task(RxData);
 			break;
 		case 3:
-			Car_Stop();
-			strcpy(str, "  stop  ");
+			SmartCar_Task(RxData);
 			break;
 		case 4:
-			Turn_Left();
-			strcpy(str, "  left  ");
+			SmartCar_Task(RxData);
 			break;
 		case 5:
-			Turn_Right();
-			strcpy(str, " right  ");
+			SmartCar_Task(RxData);
 			break;
 		case 6://顺时针旋转
-			Clockwise_Rotation();
-			strcpy(str, " cycle  ");
+			SmartCar_Task(RxData);
 			break;
 		case 7://逆时针旋转
-			CounterClockwise_Rotation();
-			strcpy(str, " Ncycle ");
+			SmartCar_Task(RxData);
 			break;
 		case 8://超声波测距
-			RxDataClearFlag = 0;
-			distance = Ultrasonic_Distance();
-			OLED_ShowNum(2,4,distance,3);//显示超声波距离
-		 	strcpy(str, "distance");
+			Ultrasonic_Distance_Task();
 		 	break;
 		case 9://循迹
-			RxDataClearFlag = 0;
-			distance = Ultrasonic_Distance();
-			OLED_ShowNum(2,4,distance,3);//显示超声波距离
-			Tracking_Run();
-			strcpy(str, "tracking");
+			Tracking_Task();
 			break;
 		case 10://LED ON
-			LED1_ON;
-			//LED2_ON;LED3_ON;
-			strcpy(str, " led on ");
+			LED_Task(1);
 			break;
 		case 11://LED OFF
-			LED1_OFF;
-			//LED2_OFF;LED3_OFF;
-			strcpy(str, " led off");
+			LED_Task(0);
 			break;
 		case 12://读取温湿度
-			DHT11_Read_Data(&temp, &humi);
-			sprintf(str,"%d oC H:%d",temp,humi);
-			OLED_ShowString(4,4,str);
-			WIFI_Send_DHT(&temp,&humi);
-			strcpy(str, " dht11  ");
+			DHT11_Task();
 			break;
 		case 13://Servo 0
-			Servo_SetAngle(0);
-			strcpy(str, "servo 0 ");
+			Servo_Task(0);
 			break;
 		case 14://Servo 45
-			Servo_SetAngle(45);
-			strcpy(str, "servo 45");
+			Servo_Task(45);
 			break;
 		case 15://Servo 90
-			Servo_SetAngle(90);
-			strcpy(str, "servo 90");
+			Servo_Task(90);
 			break;
 		case 16://Servo 135
-			Servo_SetAngle(135);
-			strcpy(str, "servo135");
+			Servo_Task(135);
 			break;
 		case 17://Servo 180
-			Servo_SetAngle(180);
-			strcpy(str, "servo180");
+			Servo_Task(180);
 			break;
 		case 18://超声波避障
-			RxDataClearFlag = 0;
-			distance = Ultrasonic_Distance();
-			OLED_ShowNum(2,4,distance,3);//显示超声波距离	
-			Ultrasonic_Run();			
-			strcpy(str, " sonic  ");
-			//距离太近时
-			if(distance < 10)
-			{
-				// Buzzer_ON;
-				LED1_ON;
-			}
-			else
-			{
-				// Buzzer_OFF;
-				LED1_OFF;
-			}
-			break;
-		// case 12://Buzzer ON
-		// 	Buzzer_ON;
-		// 	strcpy(str, " buzzer ");
-		// 	break;
-		// case 13://Buzzer OFF
-		// 	Buzzer_OFF;
-		// 	strcpy(str, " buzzer ");
-		// 	break;
-		
+			Ultrasonic_Task();
+			break;	
 	}
 }
 
@@ -386,4 +340,198 @@ void WIFI_Receive_Task(uint8_t* RxData)
 			}
 		}
 	}
+}
+
+// WIFI
+uint8_t WIFI_Task(void)
+{
+	if(WIFI_CONNECT == 0)
+	{
+		OLED_ShowString(1,4,"wifi CON.");
+	}
+	WIFI_Run(&wifiState);//WIFI运行
+	OLED_ShowNum(1,1,wifiState,2);//显示wifi连接状态值
+	
+	WIFI_Receive_Task(&RxData);//WIFI接收数据，并ping连接状态
+	//服务器连接以及ping心跳包30S发送模式事件发生时执行此任务，否则挂起任务
+	if(PING_MODE == 0)
+	{
+		printf("WIFI connect error\r\n");
+		OLED_ShowString(1,4,"wifi ERR");
+		return 1;
+	}
+
+	Voice_broadcast(RxData);
+
+	return 0;
+}
+
+// 红外遥控
+uint8_t IR_Task(void)
+{
+	if (IR_GetDataFlag())          // 收到红外遥控的完整数据帧
+	{
+		RxData = IR_GetData();
+	}
+
+	return 0;
+}
+
+// 蓝牙
+uint8_t Bluetooth_Task(void)
+{
+	if (Bluetooth_Serial_GetRxFlag())          // 收到数据标志
+	{
+		RxData = Bluetooth_Serial_GetRxData();
+
+		Voice_broadcast(RxData);
+	}
+
+	return 0;
+}
+
+// 语音识别
+uint8_t VoiceIdentify_Task(void)
+{
+	if (VoiceIdentify_Serial_GetRxFlag())          // 收到数据标志
+	{
+		RxData = VoiceIdentify_Serial_GetRxData();
+	}
+
+	return 0;
+}
+
+// 舵机
+void Servo_Task(uint8_t angle)
+{
+	Servo_SetAngle(angle);
+	sprintf(str,"servo %d ",angle);
+}
+
+//小车电机驱动
+void SmartCar_Task(uint8_t state)
+{
+	switch(state)
+	{
+		case 1:
+			Move_Forward();
+			strcpy(str, "forword ");
+			break;
+		case 2:
+			Move_Backward();
+			strcpy(str, "backword");
+			break;
+		case 3:
+			Car_Stop();
+			strcpy(str, "  stop  ");
+			break;
+		case 4:
+			Turn_Left();
+			strcpy(str, "  left  ");
+			break;
+		case 5:
+			Turn_Right();
+			strcpy(str, " right  ");
+			break;
+		case 6://顺时针旋转
+			Clockwise_Rotation();
+			strcpy(str, " cycle  ");
+			break;
+		case 7://逆时针旋转
+			CounterClockwise_Rotation();
+			strcpy(str, " Ncycle ");
+			break;
+	}
+}
+
+//LED
+void LED_Task(uint8_t state)
+{
+	if(state)
+	{
+		LED1_ON;
+		strcpy(str, " led on ");
+	}
+	else
+	{
+		LED1_OFF;
+		strcpy(str, " led off");
+	}
+}
+
+
+// 自动循迹
+void Tracking_Task(void)
+{
+	trackingVal = (L * 100)+ (M * 10) + (R * 1);
+	OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
+
+	RxDataClearFlag = 0;
+	distance = Ultrasonic_Distance();
+	OLED_ShowNum(2,4,distance,3);//显示超声波距离
+	Tracking_Run();
+	strcpy(str, "tracking");
+}
+
+//读取温度并上传到IOT服务器
+void DHT11_Task(void)
+{
+	DHT11_Read_Data(&temp, &humi);
+	sprintf(str,"%d oC H:%d",temp,humi);
+	OLED_ShowString(4,4,str);
+	WIFI_Send_DHT(&temp,&humi);
+	strcpy(str, " dht11  ");
+}
+
+//超声波测距
+void Ultrasonic_Distance_Task(void)
+{
+	RxDataClearFlag = 0;
+	distance = Ultrasonic_Distance();
+	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
+}
+
+// 超声波避障
+void Ultrasonic_Task(void)
+{
+	RxDataClearFlag = 0;
+	distance = Ultrasonic_Distance();
+	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
+	//距离太近时
+	if(distance < 10)
+	{
+		Buzzer_ON;
+		LED1_ON;
+	}
+	else
+	{
+		Buzzer_OFF;
+		LED1_OFF;
+	}
+
+	Ultrasonic_Run();			
+	strcpy(str, " sonic  ");
+}
+
+// 接收数据并执行操作
+uint8_t Receive_Task(void)
+{
+	if(RxData == 0)
+	{
+		return 1;
+	}
+
+	if(RxData){
+		OLED_ShowNum(1,14,RxData,2);//显示接收的参数
+	}
+
+	Exec_Function(RxData);
+	OLED_ShowString(1,4,str);//显示执行的动作
+	
+	//清除上次接收的数据
+	if(RxDataClearFlag == 1){
+		RxData = 0;
+	}
+
+	return 0;
 }

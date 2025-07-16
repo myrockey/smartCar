@@ -2,8 +2,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-uint8_t Serial_RxData;		//定义串口接收的数据变量
-uint8_t Serial_RxFlag;		//定义串口接收的标志位变量
+uint8_t HC_05_Serial_RxData;		//定义串口接收的数据变量
+uint8_t HC_05_Serial_RxFlag;		//定义串口接收的标志位变量
+
+uint8_t ASRPRO_Serial_RxData;		//定义串口接收的数据变量
+uint8_t ASRPRO_Serial_RxFlag;		//定义串口接收的标志位变量
 
 /**
   * 函    数：串口初始化
@@ -369,11 +372,11 @@ void Serial_Printf(USART_TypeDef * pUSARTx, char *format, ...)
   * 参    数：无
   * 返 回 值：串口接收标志位，范围：0~1，接收到数据后，标志位置1，读取后标志位自动清零
   */
-uint8_t Serial_GetRxFlag(void)
+uint8_t Serial_GetRxFlag_HC_05(void)
 {
-	if (Serial_RxFlag == 1)			//如果标志位为1
+	if (HC_05_Serial_RxFlag == 1)			//如果标志位为1
 	{
-		Serial_RxFlag = 0;
+		HC_05_Serial_RxFlag = 0;
 		return 1;					//则返回1，并自动清零标志位
 	}
 	return 0;						//如果标志位为0，则返回0
@@ -384,9 +387,34 @@ uint8_t Serial_GetRxFlag(void)
   * 参    数：无
   * 返 回 值：接收的数据，范围：0~255
   */
-uint8_t Serial_GetRxData(void)
+uint8_t Serial_GetRxData_HC_05(void)
 {
-	return Serial_RxData;			//返回接收的数据变量
+	return HC_05_Serial_RxData;			//返回接收的数据变量
+}
+
+/**
+  * 函    数：获取串口接收标志位
+  * 参    数：无
+  * 返 回 值：串口接收标志位，范围：0~1，接收到数据后，标志位置1，读取后标志位自动清零
+  */
+uint8_t Serial_GetRxFlag_ASRPRO(void)
+{
+	if (ASRPRO_Serial_RxFlag == 1)			//如果标志位为1
+	{
+		ASRPRO_Serial_RxFlag = 0;
+		return 1;					//则返回1，并自动清零标志位
+	}
+	return 0;						//如果标志位为0，则返回0
+}
+
+/**
+  * 函    数：获取串口接收的数据
+  * 参    数：无
+  * 返 回 值：接收的数据，范围：0~255
+  */
+uint8_t Serial_GetRxData_ASRPRO(void)
+{
+	return ASRPRO_Serial_RxData;			//返回接收的数据变量
 }
 
 /**
@@ -401,8 +429,8 @@ void HC_05_IRQHandler(void)
 {
 	if (USART_GetITStatus(HC_05_USARTX, USART_IT_RXNE) == SET)		//判断是否是USART1的接收事件触发的中断
 	{
-      Serial_RxData = USART_ReceiveData(HC_05_USARTX);				//读取数据寄存器，存放在接收的数据变量
-      Serial_RxFlag = 1;										//置接收标志位变量为1
+      HC_05_Serial_RxData = USART_ReceiveData(HC_05_USARTX);				//读取数据寄存器，存放在接收的数据变量
+      HC_05_Serial_RxFlag = 1;										//置接收标志位变量为1
       USART_ClearITPendingBit(HC_05_USARTX, USART_IT_RXNE);			//清除USART1的RXNE标志位
                                   //读取数据寄存器会自动清除此标志位
                                   //如果已经读取了数据寄存器，也可以不执行此代码
@@ -414,8 +442,8 @@ void ASRPRO_IRQHandler(void)
 {
     if(USART_GetITStatus(ASRPRO_USARTX, USART_IT_RXNE) == SET)
     {      
-      Serial_RxData = USART_ReceiveData(ASRPRO_USARTX);				//读取数据寄存器，存放在接收的数据变量
-      Serial_RxFlag = 1;										//置接收标志位变量为1
+      ASRPRO_Serial_RxData = USART_ReceiveData(ASRPRO_USARTX);				//读取数据寄存器，存放在接收的数据变量
+      ASRPRO_Serial_RxFlag = 1;										//置接收标志位变量为1
       USART_ClearITPendingBit(ASRPRO_USARTX, USART_IT_RXNE);			//清除USART3的RXNE标志位
                                   //读取数据寄存器会自动清除此标志位
 																//如果已经读取了数据寄存器，也可以不执行此代码

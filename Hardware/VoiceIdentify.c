@@ -19,3 +19,13 @@ void VoiceIdentify_SendByte(uint8_t Byte)
 {
 	Serial_SendByte(ASRPRO_USARTX, Byte);
 }
+
+uint8_t VoiceIdentify_Serial_GetRxFlag(void)
+{
+	return Serial_GetRxFlag_ASRPRO();
+}
+
+uint8_t VoiceIdentify_Serial_GetRxData(void)
+{
+	return Serial_GetRxData_ASRPRO();
+}

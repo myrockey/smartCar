@@ -41,9 +41,6 @@ extern uint8_t WIFI_Receive_Flag;// WIFI接收到数据标志
 extern uint8_t g_rx_esp8266_buf[WIFI_RX_BUFFER_SIZE];
 extern volatile uint32_t g_rx_esp8266_cnt;// 当前接收的字节数
 
-extern uint8_t Serial_GetRxFlag(void);
-extern uint8_t Serial_GetRxData(void);
-
 void WIFI_Init(void);
 void WIFI_SendString(char *String);
 //void WIFI_Run(void);

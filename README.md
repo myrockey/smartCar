@@ -2,7 +2,6 @@
 stm32 smart car
 
 GPIO PIN引脚占用情况:
-# PA15                    Buzzer
 PA15                    DHT11
 PA0 PA1 PA4 PA5 PA6 PA7 Motor(PWM TIM2)
 PA11                    Servo(PWM TIM1)
@@ -15,4 +14,5 @@ PB12 PB13 PB14          Tracking
 PB0 PB1                 Ultrasonic(TIM3)
 PB10 PB11               VoiceIdentify(USART3)
 
+PC13                    Buzzer
 PC15                    LED

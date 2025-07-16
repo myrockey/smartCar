@@ -72,13 +72,16 @@ void Serial_Init_ESP8266(void);
 void Serial_DMA_Init_ESP8266(uint8_t * rxBuffer);
 void USART2_DMA_SendData(uint8_t *pData, uint16_t Size);
 void Serial_Init_ASRPRO(void);
+uint8_t Serial_GetRxFlag_HC_05(void);
+uint8_t Serial_GetRxData_HC_05(void);
+uint8_t Serial_GetRxFlag_ASRPRO(void);
+uint8_t Serial_GetRxData_ASRPRO(void);
+
 void Serial_SendByte(USART_TypeDef * pUSARTx, uint8_t Byte);
 void Serial_SendArray(USART_TypeDef * pUSARTx, uint8_t *Array, uint16_t Length);//uint8_t = char 
 void Serial_SendString(USART_TypeDef * pUSARTx, char *String);
 void Serial_SendNumber(USART_TypeDef * pUSARTx, uint32_t Number, uint8_t Length);
 void Serial_Printf(USART_TypeDef * pUSARTx, char *format, ...);
 
-uint8_t Serial_GetRxFlag(void);
-uint8_t Serial_GetRxData(void);
 
 #endif
