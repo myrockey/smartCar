@@ -7,6 +7,8 @@ static volatile uint8_t  ir_timer_flag = 0;//定时器开始计数标志
 static volatile uint32_t ir_count = 0;//中断溢出次数
 static volatile uint32_t ir_lastCnt = 0;//上次的计数
 static volatile uint32_t ir_currentCnt = 0;//本次的计数
+
+static volatile uint32_t ir_time = 0;//计数（计时）
 static volatile uint8_t  ir_state   = 0;   /* 0/1/2 */
 static volatile uint8_t  ir_bits    = 0;
 static volatile uint8_t  ir_buf[4]  = {0};
@@ -141,9 +143,6 @@ void IR_TIM_CC_IRQHandler(void)
     //下降沿捕获触发中断
 	if(TIM_GetITStatus(IR_TIM,TIM_IT_CC1)!=RESET)
     {
-	    TIM_ClearITPendingBit(IR_TIM,TIM_IT_CC1);
-        uint32_t t = 0;
-
         switch (ir_state)
         {
             case 0:                 /* 空闲，等待同步头 */
@@ -152,17 +151,19 @@ void IR_TIM_CC_IRQHandler(void)
                 ir_state = 1;
                 break;
             case 1:                 /* 判断 Start/Repeat */
-                t = GetTimerCountForIR();//获取上一次中断到此次中断的时间
+                ir_time = GetTimerCountForIR();//获取上一次中断到此次中断的时间
                 SetTimerCountForIR(0);//定时计数器清0
-                if (t > 13500 - ir_diff && t < 13500 + ir_diff)       /* Start 13.5ms */
+                //如果计时为13.5msm则接收到了Start信号（判定值在72MHz预分频系数为72-1下，计时频率为1MHz（0.001ms）,计数周期20000(20ms)）
+                if (ir_time > 13500 - ir_diff && ir_time < 13500 + ir_diff)       /* Start 13.5ms */
                 {
                     ir_state = 2;
                 }
-                else if (t > 11250 - ir_diff && t < 11250 + ir_diff)  /* Repeat 11.25ms */
+                //如果计时为11.25msm则接收到了Repeat信号（判定值在72MHz预分频系数为72-1下，计时频率为1MHz（0.001ms）,计数周期20000(20ms)）
+                else if (ir_time > 11250 - ir_diff && ir_time < 11250 + ir_diff)  /* Repeat 11.25ms */
                 {
-                    ir_repeatFlag = 1;
+                    ir_repeatFlag = 1;//置收到连发帧标志位为1
                     CloseTimerForIR();//定时器停止
-                    ir_state = 0;
+                    ir_state = 0;//置状态为0
                 }
                 else //接收出错
                 {
@@ -170,19 +171,21 @@ void IR_TIM_CC_IRQHandler(void)
                 }
                 break;
             case 2:                 /* 状态2，接收数据 接收 32 bit 数据 */
-                t = GetTimerCountForIR();//获取上一次中断到此次中断的时间
+                ir_time = GetTimerCountForIR();//获取上一次中断到此次中断的时间
                 SetTimerCountForIR(0);//定时计数器清0
-                if (t > 1120 - ir_diff && t < 1120 + ir_diff)        /* 逻辑0 ~1.12ms */
+                //如果计时为1120us，则接收到了数据0（判定值在72MHz预分频系数为72-1下，计时频率为1MHz（0.001ms）,计数周期20000(20ms)）
+                if (ir_time > 1120 - ir_diff && ir_time < 1120 + ir_diff)        /* 逻辑0 ~1.12ms */
                 {
                     ir_buf[ir_bits / 8] &= ~(1 << (ir_bits % 8));
                     ir_bits++;
                 }
-                else if (t > 2250 - ir_diff && t < 2250 + ir_diff)   /* 逻辑1 ~2.25ms */
+                //如果计时为2250us，则接收到了数据1（判定值在72MHz预分频系数为72-1下，计时频率为1MHz（0.001ms）,计数周期20000(20ms)）
+                else if (ir_time > 2250 - ir_diff && ir_time < 2250 + ir_diff)   /* 逻辑1 ~2.25ms */
                 {
                     ir_buf[ir_bits / 8] |=  (1 << (ir_bits % 8));
                     ir_bits++;
                 }
-                else
+                else    // 接收出错
                 {
                     ir_bits = 0;//数据位置清0
                     ir_state = 1;   /* 状态置为1 */
@@ -199,12 +202,14 @@ void IR_TIM_CC_IRQHandler(void)
                     {
                         ir_addr = ir_buf[0];
                         ir_cmd  = ir_buf[2];
-                        ir_dataFlag = 1;
+                        ir_dataFlag = 1; //置收到标志位为1
                     }
                     CloseTimerForIR();//定时器停止
                     ir_state = 0;
                 }
                 break;
         }
+
+        TIM_ClearITPendingBit(IR_TIM,TIM_IT_CC1);
     }
 }
