@@ -1,9 +1,4 @@
-#include "stm32f10x.h"                  // Device header
 #include "Buzzer.h"
-
-//低电平触发有源蜂鸣器
-#define Buzzer_ON             GPIO_ResetBits(Buzzer_GPIO_PORT,Buzzer_GPIO_PIN)
-#define Buzzer_OFF			  GPIO_SetBits(Buzzer_GPIO_PORT,Buzzer_GPIO_PIN)
 
 void Buzzer_Init(void)
 {		

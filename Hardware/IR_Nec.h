@@ -19,6 +19,19 @@
 #define IR_OK    0x1C
 #define IR_LEFT  0x08
 #define IR_RIGHT 0x5A
+#define IR_1	 0x45
+#define IR_2	 0x46
+#define IR_3	 0x47
+#define IR_4	 0x44
+#define IR_5	 0x40
+#define IR_6	 0x43
+#define IR_7	 0x07
+#define IR_8	 0x15
+#define IR_9	 0x09
+#define IR_0	 0x19
+#define IR_X	 0x16
+#define IR_J	 0x0D
+
 
 void IR_Nec_Init(void);                 // 初始化
 uint8_t IR_GetData(void);

@@ -269,8 +269,8 @@ void Serial_Init_ASRPRO(void)
   */
 void Serial_SendByte(USART_TypeDef * pUSARTx, uint8_t Byte)
 {
-	USART_SendData(HC_05_USARTX, Byte);		//将字节数据写入数据寄存器，写入后USART自动生成时序波形
-	while (USART_GetFlagStatus(HC_05_USARTX, USART_FLAG_TXE) == RESET);	//等待发送完成
+	USART_SendData(pUSARTx, Byte);		//将字节数据写入数据寄存器，写入后USART自动生成时序波形
+	while (USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET);	//等待发送完成
 	/*下次写入数据寄存器会自动清除发送完成标志位，故此循环后，无需清除标志位*/
 }
 

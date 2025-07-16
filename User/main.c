@@ -12,7 +12,7 @@
 #include "Ultrasonic.h"
 #include "WIFI.h"
 #include "Tracking.h"
-#include "Buzzer.h"
+//#include "Buzzer.h"
 #include "DHT11.h"
 #include "LED.h"
 #include "Servo.h"
@@ -78,25 +78,8 @@ int main(void)
 	OLED_ShowString(3,1,"J:");
 	OLED_ShowString(4,1,"T:");
 	
-	// printf("IR NEC Decoder Ready\r\n");
-//    while (1)
-//    {
-//        if (IR_GetDataFlag())          // 收到完整数据帧
-//        {
-//            uint8_t addr = IR_GetAddress();
-//            uint8_t cmd  = IR_GetCommand();
-//            printf("Addr: 0x%02X, Cmd: 0x%02X\r\n", addr, cmd);
-//        }
-
-//        if (IR_GetRepeatFlag())        // 连发帧（长按）
-//        {
-//            printf("Repeat\r\n");
-//        }
-//    }
-	
 	while(1)
 	{
-		//continue;
 		if(WIFI_Task() != 0)
 		{
 			continue;
@@ -133,7 +116,7 @@ void BSP_Init(void)
 	Bluetooth_Init();//蓝牙初始化
 	Ultrasonic_Init();//超声波初始化
 	Tracking_Init();//循迹初始化
-	Buzzer_Init();//蜂鸣器初始化
+	//Buzzer_Init();//蜂鸣器初始化
 	DHT11_Init();
 	LED_Init();//LED初始化
 	WIFI_Init();
@@ -500,12 +483,12 @@ void Ultrasonic_Task(void)
 	//距离太近时
 	if(distance < 10)
 	{
-		Buzzer_ON;
+		//Buzzer_ON;
 		LED1_ON;
 	}
 	else
 	{
-		Buzzer_OFF;
+		//Buzzer_OFF;
 		LED1_OFF;
 	}
 

@@ -85,6 +85,33 @@ uint8_t IR_GetData(void)
         case IR_RIGHT:
             res = 5;
             break;
+        case IR_0:
+            res = 10;
+            break;
+        case IR_1:
+            res = 11;
+            break;
+        case IR_2:
+            res = 12;
+            break;
+        case IR_3:
+            res = 13;
+            break;
+        case IR_4:
+            res = 14;
+            break;
+        case IR_5:
+            res = 15;
+            break;
+        case IR_6:
+            res = 16;
+            break;
+        case IR_7:
+            res = 17;
+            break;
+        case IR_8:
+            res = 18;
+            break;
         default:
             break;
     }
