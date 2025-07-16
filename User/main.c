@@ -370,18 +370,20 @@ void WIFI_Receive_Task(uint8_t* RxData)
 		// 获取远程命令(TODO:待完善，接收的数据不完整。或调整设备传输数据类型为hex)
 		if(strstr((const char*)received_str, MQTT_ATTR_PUSH_SUB) != NULL && strstr((const char*)received_str, "temp") != NULL){
 			printf("IOT push data:%s \r\n",received_str); 		   	 //串口输出信息
-			char json[128];
-			extract_json((const char*)received_str, json);
-			/* 解析整段JSO数据 */
-			cjson_test = cJSON_Parse((const char*)json);
-			if(cjson_test == NULL)
+			char json[256] = {0};//初始化缓冲区
+			if(extract_json((const char*)received_str, json))
 			{
-				printf("parse fail.\n");
-				return;
+				cjson_test = cJSON_Parse((const char*)json);
+				if(cjson_test) {
+					cjson_params = cJSON_GetObjectItem(cjson_test, "temp");
+					if(cjson_params && cJSON_IsNumber(cjson_params)) {
+						*RxData = (uint8_t)cjson_params->valueint;
+					}
+					cJSON_Delete(cjson_test); // 必须添加
+				} else {
+					printf("JSON parse fail: %s\n", json);
+				}
 			}
-			/* 依次根据名称提取JSON数据（键值对） */
-			cjson_params = cJSON_GetObjectItem(cjson_test, "temp");
-			*RxData = (uint8_t)cjson_params->valueint;
 		}
 	}
 }
