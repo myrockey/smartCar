@@ -124,7 +124,8 @@ static void CloseTimerForIR()
 //由于不直接对定时器的CNT清0
 void SetTimerCountForIR(uint16_t count)
 {
-    // ir_count = count;//溢出次数清0
+    ir_count = count;//溢出计数清0
+    ir_lastCnt = TIM_GetCapture1(IR_TIM);//同时记录当前读数到上次读数
 }
 
 //获取定时器的计数器值

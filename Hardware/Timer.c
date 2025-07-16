@@ -38,13 +38,13 @@ void TIM1_Init(void)
     NVIC_InitTypeDef NVIC_InitStructure;
     NVIC_InitStructure.NVIC_IRQChannel = IR_TIM_UPDATE_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
     NVIC_InitStructure.NVIC_IRQChannel = IR_TIM_CC_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 	/*******************  红外遥控  ******************/
@@ -133,7 +133,7 @@ void TIM_Ultrasonic(void)
 	
     //NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     NVIC_InitStructure.NVIC_IRQChannel = Ultrasonic_TIM_IRQn;             
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;  
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;  
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;         
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;       
     NVIC_Init(&NVIC_InitStructure);
