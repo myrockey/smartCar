@@ -366,8 +366,26 @@ uint8_t VoiceIdentify_Task(void)
 }
 
 // 舵机
-void Servo_Task(uint8_t angle)
+void Servo_Task(uint8_t type)
 {
+	uint8_t angle = 0;
+	switch(type)
+	{
+		case TYPE_SERVO_0://Servo 0
+			angle = 0;
+			break;
+		case TYPE_SERVO_45://Servo 45
+			angle = 45;
+			break;
+		case TYPE_SERVO_90://Servo 90
+			angle = 90;
+			break;
+		case TYPE_SERVO_135://Servo 135
+			angle = 135;
+			break;
+		case TYPE_SERVO_180://Servo 180
+			angle = 180;
+	}
 	Servo_SetAngle(angle);
 	sprintf(str,"servo %d ",angle);
 }

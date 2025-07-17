@@ -61,8 +61,8 @@ void TIM1_Init(void)
 	TIM_OCInitStructure.TIM_Pulse = 2500;								//初始的CCR值
 	TIM_OC4Init(SG90_TIM, &TIM_OCInitStructure);                        //将结构体变量交给TIM_OC4Init，配置TIM2的输出比较通道4
 	
-	// TIM_OC4PreloadConfig(SG90_TIM, TIM_OCPreload_Enable);
-    // TIM_ARRPreloadConfig(SG90_TIM, ENABLE);
+	TIM_OC4PreloadConfig(SG90_TIM, TIM_OCPreload_Enable);
+    TIM_ARRPreloadConfig(SG90_TIM, ENABLE);
 
     /* 高级定时器需要使能主输出 */
     TIM_CtrlPWMOutputs(SG90_TIM, ENABLE);

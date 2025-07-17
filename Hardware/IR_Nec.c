@@ -140,9 +140,9 @@ void IR_TIM_UPDATE_IRQHandler(void)
 //打开定时器3
 static void OpenTimerForIR()  
 {
-    // ir_count = 0;//溢出次数清0
-    // ir_lastCnt = 0;//上次读数
-    // ir_currentCnt = 0;//本次读数
+    ir_count = 0;//溢出次数清0
+    ir_lastCnt = 0;//上次读数
+    ir_currentCnt = 0;//本次读数
     ir_timer_flag = 1;
 }
 
@@ -172,6 +172,7 @@ uint32_t GetTimerCountForIR(void)
 //输入捕获中断函数
 void IR_TIM_CC_IRQHandler(void)
 {
+	static uint8_t error_count = 0;
     //下降沿捕获触发中断
 	if(TIM_GetITStatus(IR_TIM,TIM_IT_CC1)!=RESET)
     {
@@ -199,7 +200,17 @@ void IR_TIM_CC_IRQHandler(void)
                 }
                 else //接收出错
                 {
-                    ir_state = 1;   /* 状态置为1 */
+					//出错3次，直接重新开始接收。
+					if(error_count > 3)
+					{
+						error_count = 0;
+						CloseTimerForIR();//定时器停止
+						ir_state = 0;//置状态为0
+					}
+					else
+					{
+						ir_state = 1;   /* 状态置为1 */
+					}
                 }
                 break;
             case 2:                 /* 状态2，接收数据 接收 32 bit 数据 */
