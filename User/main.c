@@ -135,63 +135,45 @@ void Exec_Function(uint8_t type)
 	if(RxData > 0){
 		RxDataClearFlag = 1;
 	}
-	switch(RxData)
-	{
-		case 1:
-			SmartCar_Task(RxData);
-			break;
-		case 2:
-			SmartCar_Task(RxData);
-			break;
-		case 3:
-			SmartCar_Task(RxData);
-			break;
-		case 4:
-			SmartCar_Task(RxData);
-			break;
-		case 5:
-			SmartCar_Task(RxData);
-			break;
-		case 6://顺时针旋转
-			SmartCar_Task(RxData);
-			break;
-		case 7://逆时针旋转
-			SmartCar_Task(RxData);
-			break;
-		case 8://超声波测距
-			Ultrasonic_Distance_Task();
-		 	break;
-		case 9://循迹
-			Tracking_Task();
-			break;
-		case 10://LED ON
-			LED_Task(1);
-			break;
-		case 11://LED OFF
-			LED_Task(0);
-			break;
-		case 12://读取温湿度
-			DHT11_Task();
-			break;
-		case 13://Servo 0
-			Servo_Task(0);
-			break;
-		case 14://Servo 45
-			Servo_Task(45);
-			break;
-		case 15://Servo 90
-			Servo_Task(90);
-			break;
-		case 16://Servo 135
-			Servo_Task(135);
-			break;
-		case 17://Servo 180
-			Servo_Task(180);
-			break;
-		case 18://超声波避障
-			Ultrasonic_Task();
-			break;	
-	}
+	switch (RxData) {
+        case TYPE_FORWARD:
+        case TYPE_BACKWORD:
+        case TYPE_STOP:
+        case TYPE_LEFT:
+        case TYPE_RIGHT:
+        case TYPE_CLOCKWISE_ROTATION:
+        case TYPE_COUNTERCLOCKWISE_ROTATION:
+            SmartCar_Task(RxData);
+            break;
+        case TYPE_ULTRASONIC_DISTANCE:
+            Ultrasonic_Distance_Task();
+            break;
+        case TYPE_TRACKING:
+            Tracking_Task();
+            break;
+        case TYPE_LED_ON:
+            LED_Task(1);
+            break;
+        case TYPE_LED_OFF:
+            LED_Task(0);
+            break;
+        case TYPE_READ_DHT11:
+            DHT11_Task();
+            break;
+        case TYPE_SERVO_0:
+        case TYPE_SERVO_45:
+        case TYPE_SERVO_90:
+        case TYPE_SERVO_135:
+        case TYPE_SERVO_180:
+            Servo_Task(RxData);
+            break;
+        case TYPE_ULTRASONIC_OBSTACLE:
+            Ultrasonic_Task();
+            break;
+        default:
+            //printf("Unknown command\n");
+            break;
+    }
 }
 
 /*
@@ -202,11 +184,9 @@ void Voice_broadcast(uint8_t type)
 {
 	switch(type)
 	{
-		case 10://LED ON
-			VoiceIdentify_SendByte(0x0A);
-			break;
-		case 11://LED OFF
-			VoiceIdentify_SendByte(0x0B);
+		case TYPE_LED_ON://LED ON
+		case TYPE_LED_OFF://LED OFF
+			VoiceIdentify_SendByte(type);
 			break;
 	}
 }
@@ -397,31 +377,31 @@ void SmartCar_Task(uint8_t state)
 {
 	switch(state)
 	{
-		case 1:
+		case TYPE_FORWARD:
 			Move_Forward();
 			strcpy(str, "forword ");
 			break;
-		case 2:
+		case TYPE_BACKWORD:
 			Move_Backward();
 			strcpy(str, "backword");
 			break;
-		case 3:
+		case TYPE_STOP:
 			Car_Stop();
 			strcpy(str, "  stop  ");
 			break;
-		case 4:
+		case TYPE_LEFT:
 			Turn_Left();
 			strcpy(str, "  left  ");
 			break;
-		case 5:
+		case TYPE_RIGHT:
 			Turn_Right();
 			strcpy(str, " right  ");
 			break;
-		case 6://顺时针旋转
+		case TYPE_CLOCKWISE_ROTATION://顺时针旋转
 			Clockwise_Rotation();
 			strcpy(str, " cycle  ");
 			break;
-		case 7://逆时针旋转
+		case TYPE_COUNTERCLOCKWISE_ROTATION://逆时针旋转
 			CounterClockwise_Rotation();
 			strcpy(str, " Ncycle ");
 			break;

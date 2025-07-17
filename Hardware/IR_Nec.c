@@ -1,6 +1,7 @@
 #include "stm32f10x.h"                  // Device header
 #include "IR_Nec.h"
 #include "Timer.h"
+#include "globals.h"
 
 /* 全局变量 */
 static volatile uint8_t  ir_timer_flag = 0;//定时器开始计数标志
@@ -71,48 +72,52 @@ uint8_t IR_GetData(void)
     switch (cmd)
     {
         case IR_UP:
-            res = 1;
+            res = TYPE_FORWARD;
             break;
         case IR_DOWN:
-            res = 2;
+            res = TYPE_BACKWORD;
             break;
         case IR_OK:
-            res = 3;
+            res = TYPE_STOP;
             break;
         case IR_LEFT:
-            res = 4;
+            res = TYPE_LEFT;
             break;
         case IR_RIGHT:
-            res = 5;
+            res = TYPE_RIGHT;
+            break;
+        case IR_J:
+            res = TYPE_CLOCKWISE_ROTATION;
+            break;
+        case IR_X:
+            res = TYPE_COUNTERCLOCKWISE_ROTATION;
             break;
         case IR_0:
-            res = 10;
+            res = TYPE_LED_ON;
             break;
         case IR_1:
-            res = 11;
+            res = TYPE_LED_OFF;
             break;
         case IR_2:
-            res = 12;
+            res = TYPE_READ_DHT11;
             break;
         case IR_3:
-            res = 13;
+            res = TYPE_SERVO_0;
             break;
         case IR_4:
-            res = 14;
+            res = TYPE_SERVO_45;
             break;
         case IR_5:
-            res = 15;
+            res = TYPE_SERVO_90;
             break;
         case IR_6:
-            res = 16;
+            res = TYPE_SERVO_135;
             break;
         case IR_7:
-            res = 17;
+            res = TYPE_SERVO_180;
             break;
         case IR_8:
-            res = 18;
-            break;
-        default:
+            res = TYPE_ULTRASONIC_OBSTACLE;
             break;
     }
 	return res;
@@ -135,10 +140,9 @@ void IR_TIM_UPDATE_IRQHandler(void)
 //打开定时器3
 static void OpenTimerForIR()  
 {
-    ir_count = 0;//溢出次数清0
-    ir_lastCnt = 0;//上次读数
-    ir_currentCnt = 0;//本次读数
-
+    // ir_count = 0;//溢出次数清0
+    // ir_lastCnt = 0;//上次读数
+    // ir_currentCnt = 0;//本次读数
     ir_timer_flag = 1;
 }
 

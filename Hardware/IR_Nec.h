@@ -14,6 +14,7 @@
 #define IR_TIM_CC_IRQHandler  TIM1_CC_IRQHandler
 /* --------------------------------------------------- */
 
+//遥控器按键对应Hex值
 #define IR_UP    0x18
 #define IR_DOWN  0x52
 #define IR_OK    0x1C
