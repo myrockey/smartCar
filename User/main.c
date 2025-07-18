@@ -9,7 +9,7 @@
 #include "Timer.h"
 #include "SmartCar.h"
 #include "Bluetooth.h"
-#include "Ultrasonic.h"
+// #include "Ultrasonic.h"
 #include "WIFI.h"
 #include "Tracking.h"
 //#include "Buzzer.h"
@@ -114,7 +114,7 @@ void BSP_Init(void)
 	OLED_Init();//显示屏初始化
 	SmartCar_Init();//电机驱动初始化
 	Bluetooth_Init();//蓝牙初始化
-	Ultrasonic_Init();//超声波初始化
+	// Ultrasonic_Init();//超声波初始化
 	Tracking_Init();//循迹初始化
 	//Buzzer_Init();//蜂鸣器初始化
 	DHT11_Init();
@@ -373,21 +373,26 @@ void Servo_Task(uint8_t type)
 	{
 		case TYPE_SERVO_0://Servo 0
 			angle = 0;
+			strcpy(str, "servo 0 ");
 			break;
 		case TYPE_SERVO_45://Servo 45
 			angle = 45;
+			strcpy(str, "servo 45");
 			break;
 		case TYPE_SERVO_90://Servo 90
 			angle = 90;
+			strcpy(str, "servo 90");
 			break;
 		case TYPE_SERVO_135://Servo 135
 			angle = 135;
+			strcpy(str, "servo135");
 			break;
 		case TYPE_SERVO_180://Servo 180
 			angle = 180;
+			strcpy(str, "servo180");
+			break;
 	}
 	Servo_SetAngle(angle);
-	sprintf(str,"servo %d ",angle);
 }
 
 //小车电机驱动
@@ -449,7 +454,7 @@ void Tracking_Task(void)
 	OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 
 	RxDataClearFlag = 0;
-	distance = Ultrasonic_Distance();
+	//distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离
 	Tracking_Run();
 	strcpy(str, "tracking");
@@ -469,7 +474,7 @@ void DHT11_Task(void)
 void Ultrasonic_Distance_Task(void)
 {
 	RxDataClearFlag = 0;
-	distance = Ultrasonic_Distance();
+	//distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
 }
 
@@ -477,7 +482,7 @@ void Ultrasonic_Distance_Task(void)
 void Ultrasonic_Task(void)
 {
 	RxDataClearFlag = 0;
-	distance = Ultrasonic_Distance();
+	// distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
 	//距离太近时
 	if(distance < 10)
@@ -491,7 +496,7 @@ void Ultrasonic_Task(void)
 		LED1_OFF;
 	}
 
-	Ultrasonic_Run();			
+	// Ultrasonic_Run();			
 	strcpy(str, " sonic  ");
 }
 
