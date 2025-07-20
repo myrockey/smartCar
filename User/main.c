@@ -147,6 +147,7 @@ void Exec_Function(uint8_t type)
             break;
         case TYPE_ULTRASONIC_DISTANCE:
             Ultrasonic_Distance_Task();
+			strcpy(str, " distance");
             break;
         case TYPE_TRACKING:
             Tracking_Task();
@@ -241,6 +242,7 @@ void WIFI_Send_DHT(char *temp, char *humi)
 	snprintf(message,sizeof(message),"{\\\"temperature\\\": %d}",*temp);
 	printf("wifi send dht:%s\n",message);
 	ESP8266_MQTT_Publish(message);//添加数据，发布给服务器
+	Delay_s(30);//30s才能上传1次。
 }
 
 void WIFI_Receive_Task(uint8_t* RxData)
@@ -453,9 +455,9 @@ void Tracking_Task(void)
 	trackingVal = (L * 100)+ (M * 10) + (R * 1);
 	OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 
-	RxDataClearFlag = 0;
-	distance = Ultrasonic_Distance();
-	OLED_ShowNum(2,4,distance,3);//显示超声波距离
+	
+	Ultrasonic_Distance_Task();
+	
 	Tracking_Run();
 	strcpy(str, "tracking");
 }
@@ -477,14 +479,6 @@ void Ultrasonic_Distance_Task(void)
 	distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
 	Delay_ms(100);
-}
-
-// 超声波避障
-void Ultrasonic_Task(void)
-{
-	RxDataClearFlag = 0;
-	distance = Ultrasonic_Distance();
-	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
 	//距离太近时
 	if(distance < 10)
 	{
@@ -496,7 +490,13 @@ void Ultrasonic_Task(void)
 		//Buzzer_OFF;
 		LED1_OFF;
 	}
+}
 
+// 超声波避障
+void Ultrasonic_Task(void)
+{
+	Ultrasonic_Distance_Task();
+	
 	Ultrasonic_Run();			
 	strcpy(str, " sonic  ");
 }
