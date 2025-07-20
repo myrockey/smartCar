@@ -187,7 +187,7 @@
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>0</useUlib>
+            <useUlib>1</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <nSecure>0</nSecure>
@@ -660,6 +660,31 @@
               <FileType>5</FileType>
               <FilePath>.\System\Delay.h</FilePath>
             </File>
+            <File>
+              <FileName>BitAction.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\System\BitAction.h</FilePath>
+            </File>
+            <File>
+              <FileName>cJSON.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\System\cJSON.c</FilePath>
+            </File>
+            <File>
+              <FileName>cJSON.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\System\cJSON.h</FilePath>
+            </File>
+            <File>
+              <FileName>RingBuff.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\System\RingBuff.c</FilePath>
+            </File>
+            <File>
+              <FileName>RingBuff.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\System\RingBuff.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -701,16 +726,6 @@
               <FilePath>.\Hardware\OLED_Font.h</FilePath>
             </File>
             <File>
-              <FileName>PWM.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Hardware\PWM.c</FilePath>
-            </File>
-            <File>
-              <FileName>PWM.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Hardware\PWM.h</FilePath>
-            </File>
-            <File>
               <FileName>Motor.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Hardware\Motor.c</FilePath>
@@ -719,6 +734,136 @@
               <FileName>Motor.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\Motor.h</FilePath>
+            </File>
+            <File>
+              <FileName>Bluetooth.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Bluetooth.c</FilePath>
+            </File>
+            <File>
+              <FileName>Bluetooth.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Bluetooth.h</FilePath>
+            </File>
+            <File>
+              <FileName>Buzzer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Buzzer.c</FilePath>
+            </File>
+            <File>
+              <FileName>Buzzer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Buzzer.h</FilePath>
+            </File>
+            <File>
+              <FileName>DHT11.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\DHT11.c</FilePath>
+            </File>
+            <File>
+              <FileName>DHT11.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\DHT11.h</FilePath>
+            </File>
+            <File>
+              <FileName>globals.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\globals.c</FilePath>
+            </File>
+            <File>
+              <FileName>globals.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\globals.h</FilePath>
+            </File>
+            <File>
+              <FileName>IR_Nec.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\IR_Nec.c</FilePath>
+            </File>
+            <File>
+              <FileName>IR_Nec.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\IR_Nec.h</FilePath>
+            </File>
+            <File>
+              <FileName>Serial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Serial.c</FilePath>
+            </File>
+            <File>
+              <FileName>Serial.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Serial.h</FilePath>
+            </File>
+            <File>
+              <FileName>Servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Servo.c</FilePath>
+            </File>
+            <File>
+              <FileName>Servo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Servo.h</FilePath>
+            </File>
+            <File>
+              <FileName>SmartCar.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\SmartCar.c</FilePath>
+            </File>
+            <File>
+              <FileName>SmartCar.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\SmartCar.h</FilePath>
+            </File>
+            <File>
+              <FileName>Timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>Timer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Timer.h</FilePath>
+            </File>
+            <File>
+              <FileName>tracking.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\tracking.c</FilePath>
+            </File>
+            <File>
+              <FileName>tracking.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\tracking.h</FilePath>
+            </File>
+            <File>
+              <FileName>Ultrasonic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\Ultrasonic.c</FilePath>
+            </File>
+            <File>
+              <FileName>Ultrasonic.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\Ultrasonic.h</FilePath>
+            </File>
+            <File>
+              <FileName>VoiceIdentify.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\VoiceIdentify.c</FilePath>
+            </File>
+            <File>
+              <FileName>VoiceIdentify.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\VoiceIdentify.h</FilePath>
+            </File>
+            <File>
+              <FileName>WIFI.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\WIFI.c</FilePath>
+            </File>
+            <File>
+              <FileName>WIFI.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\WIFI.h</FilePath>
             </File>
           </Files>
         </Group>

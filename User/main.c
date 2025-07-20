@@ -80,8 +80,6 @@ int main(void)
 	
 	while(1)
 	{	
-		Ultrasonic_Task();	
-		continue;
 		if(WIFI_Task() != 0)
 		{
 			continue;
