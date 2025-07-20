@@ -9,7 +9,7 @@
 #include "Timer.h"
 #include "SmartCar.h"
 #include "Bluetooth.h"
-// #include "Ultrasonic.h"
+#include "Ultrasonic.h"
 #include "WIFI.h"
 #include "Tracking.h"
 //#include "Buzzer.h"
@@ -79,7 +79,9 @@ int main(void)
 	OLED_ShowString(4,1,"T:");
 	
 	while(1)
-	{
+	{	
+		Ultrasonic_Task();	
+		continue;
 		if(WIFI_Task() != 0)
 		{
 			continue;
@@ -114,7 +116,7 @@ void BSP_Init(void)
 	OLED_Init();//显示屏初始化
 	SmartCar_Init();//电机驱动初始化
 	Bluetooth_Init();//蓝牙初始化
-	// Ultrasonic_Init();//超声波初始化
+	Ultrasonic_Init();//超声波初始化
 	Tracking_Init();//循迹初始化
 	//Buzzer_Init();//蜂鸣器初始化
 	DHT11_Init();
@@ -454,7 +456,7 @@ void Tracking_Task(void)
 	OLED_ShowNum(3,4,trackingVal,3);//显示循迹模块的值
 
 	RxDataClearFlag = 0;
-	//distance = Ultrasonic_Distance();
+	distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离
 	Tracking_Run();
 	strcpy(str, "tracking");
@@ -474,15 +476,16 @@ void DHT11_Task(void)
 void Ultrasonic_Distance_Task(void)
 {
 	RxDataClearFlag = 0;
-	//distance = Ultrasonic_Distance();
+	distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
+	Delay_ms(100);
 }
 
 // 超声波避障
 void Ultrasonic_Task(void)
 {
 	RxDataClearFlag = 0;
-	// distance = Ultrasonic_Distance();
+	distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
 	//距离太近时
 	if(distance < 10)
@@ -496,7 +499,7 @@ void Ultrasonic_Task(void)
 		LED1_OFF;
 	}
 
-	// Ultrasonic_Run();			
+	Ultrasonic_Run();			
 	strcpy(str, " sonic  ");
 }
 

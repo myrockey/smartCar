@@ -4,8 +4,14 @@
 #include "SmartCar.h"
 #include "Delay.h"
 
-uint16_t Hcsr04_Count = 0;//定时器计数
 extern int distance;//距障碍物距离
+
+/*---------------- 仅需新增的全局变量 ----------------*/
+static volatile int last_valid_distance = 0;   // 保存上一次有效距离(cm)
+volatile uint32_t ic_rising = 0;
+volatile uint32_t ic_falling = 0;
+volatile uint8_t  ic_done   = 0;
+volatile uint16_t ic_ovf    = 0;
 
 //IO口初始化 及其他初始化
 void Ultrasonic_Init(void)
@@ -27,65 +33,62 @@ void Ultrasonic_Init(void)
     TIM_Ultrasonic();
 }
 
-//打开定时器3
-static void OpenTimerForHc()  
-{
-   TIM_SetCounter(Ultrasonic_TIM,0);
-   Hcsr04_Count = 0;
-   TIM_Cmd(Ultrasonic_TIM, ENABLE); 
-}
-
-//关闭定时器3
-static void CloseTimerForHc()    
-{
-   TIM_Cmd(Ultrasonic_TIM, DISABLE); 
-}
-
 //获取定时器3计数器值
 uint32_t GetEchoTimer(void)
 {
-   uint32_t t = 0;
-   t = Hcsr04_Count*1000;
-   t += TIM_GetCounter(Ultrasonic_TIM);
-   Ultrasonic_TIM->CNT = 0;  //计数器归零
-   Delay_ms(50);
-   return t;
+    uint32_t t = 0;
+   
+    if (ic_falling >= ic_rising)
+    {
+        t = ic_falling - ic_rising;
+    }
+    else
+    {
+        t = (0xFFFF - ic_rising) + ic_falling + (uint32_t)ic_ovf * 0x10000UL;
+    }
+
+    return t;
 }
 
 //通过定时器3计数器值推算距离
 float Ultrasonic_Distance(void)
 {
+   uint8_t valid_samples = 0;
    uint32_t t = 0;
    int i = 0;
-   float lengthTemp = 0;
    float sum = 0;
-   uint8_t j = 0;
-    
-   while(i != 5)  //测量五次取平均
+   uint32_t timeout = 0;
+
+   for(i = 0; i < 5; i++)  //测量五次取平均
    {
-        for(j = 0;j < 5;j++)
+        //timeout = 0;
+        /* 触发10us脉冲 */
+        TRIG_Send = 1;   //给控制端高电平
+        Delay_us(20);
+        TRIG_Send = 0;  //超声波模块已开始发送8个40khz脉冲
+
+        /* 2. 等待捕获完成（超时 65 ms）*/
+        ic_done = 0;
+        ic_ovf  = 0;
+        TIM_SetCounter(Ultrasonic_TIM, 0);
+        while (!ic_done && timeout < 65000) { Delay_us(1); timeout++; }
+        //while (!ic_done) {}
+        
+        /* 3. 计算距离 */
+        if (ic_done)
         {
-            TRIG_Send = 1;   //给控制端高电平
-            Delay_us(20);
-            TRIG_Send = 0;  //超声波模块已开始发送8个40khz脉冲
+            t = GetEchoTimer();
+            sum += ((float)t * 34/2000);   // us -> cm
+            valid_samples++;
         }
-
-        while(ECHO_Recieve == 0);   //若ECHO_Recieve为低电平，则一直循环，直到为高电平。  
-
-        OpenTimerForHc();       //此时说明检测到高电平，开启定时器，开始计时。       
-
-        while(ECHO_Recieve == 1); //若ECHO_Recieve为高电平，则一直循环，直到为低电平。 
-
-        CloseTimerForHc();   //此时说明检测到低电平，关闭定时器，停止计时 
-
-        t = GetEchoTimer();        //获取定时器时间       
-        lengthTemp = ((float)t*0.034/2); //数据处理，转换成cm
-        sum += lengthTemp;  //五次测得数据累加
-        i++;
     }
-   
-    lengthTemp = sum/5.0; //取平均
-    return lengthTemp;
+
+    if(valid_samples == 0)
+    {
+        return last_valid_distance;   // 保存上一次有效距离(cm)
+    }
+    last_valid_distance = sum / valid_samples;   // 只除有效次数
+    return last_valid_distance; //取平均
 }
 
 //超声波避障
@@ -97,7 +100,7 @@ void Ultrasonic_Run(void)
         Move_Forward();
     }
     //小于30cm还可以往后退
-    if(distance <= 30)
+    if(distance <= 30 && distance > 7)
     {
         Move_Backward();
     }
@@ -116,9 +119,33 @@ void Ultrasonic_Run(void)
 //定时器3终中断
 void Ultrasonic_TIM_IRQHandler(void)  
 {
-   if (TIM_GetITStatus(Ultrasonic_TIM, TIM_IT_Update) != RESET)  
-   {
-       TIM_ClearITPendingBit(Ultrasonic_TIM, TIM_IT_Update  ); 
-       Hcsr04_Count++; //计数器开始加
-   }
+    /* 捕获中断 */
+    if (TIM_GetITStatus(Ultrasonic_TIM, TIM_IT_CC4) != RESET)
+    {
+        TIM_ClearITPendingBit(Ultrasonic_TIM, TIM_IT_CC4);
+        static uint8_t rising_captured = 0;
+        if (!rising_captured)
+        {
+            /* 第一次上升沿 */
+            ic_rising = TIM_GetCapture4(Ultrasonic_TIM);
+            ic_ovf    = 0;
+            rising_captured = 1;
+            TIM_OC4PolarityConfig(Ultrasonic_TIM, TIM_ICPolarity_Falling);
+        }
+        else
+        {
+            /* 下降沿 */
+            ic_falling = TIM_GetCapture4(Ultrasonic_TIM);
+            ic_done    = 1;
+            rising_captured = 0;
+            TIM_OC4PolarityConfig(Ultrasonic_TIM, TIM_ICPolarity_Rising);
+        }
+    }
+
+    /* 溢出中断：扩展计时范围 */
+    if (TIM_GetITStatus(Ultrasonic_TIM, TIM_IT_Update) != RESET)
+    {
+        TIM_ClearITPendingBit(Ultrasonic_TIM, TIM_IT_Update);
+        ic_ovf++;
+    }
 }

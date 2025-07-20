@@ -51,8 +51,8 @@ void Serial_Init_HC_05(void)
   NVIC_InitTypeDef NVIC_InitStructure;					//定义结构体变量
   NVIC_InitStructure.NVIC_IRQChannel = HC_05_IRQn;		//选择配置NVIC的USART1线
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;			//指定NVIC线路使能
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;		//指定NVIC线路的抢占优先级为1
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;		//指定NVIC线路的响应优先级为1
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 8;		//指定NVIC线路的抢占优先级为1
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;		//指定NVIC线路的响应优先级为1
   NVIC_Init(&NVIC_InitStructure);							//将结构体变量交给NVIC_Init，配置NVIC外设
 
   /*USART使能*/
@@ -164,7 +164,7 @@ void Serial_DMA_Init_ESP8266(uint8_t * rxBuffer) {
 
   // 配置NVIC
   NVIC_InitStructure.NVIC_IRQChannel = ESP8266_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 5;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
   NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
   NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
   NVIC_Init(&NVIC_InitStructure);
@@ -207,7 +207,7 @@ void Serial_Init_ESP8266(void)
     //NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);                 //设置NVIC中断分组2
     NVIC_InitStructure.NVIC_IRQChannel = ESP8266_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 4;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 
@@ -251,7 +251,7 @@ void Serial_Init_ASRPRO(void)
     //NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);                 //设置NVIC中断分组2
     NVIC_InitStructure.NVIC_IRQChannel = ASRPRO_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 5;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_Init(&NVIC_InitStructure);
 

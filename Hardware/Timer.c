@@ -37,13 +37,13 @@ void TIM1_Init(void)
 	/* TIM1 Update NVIC */
     NVIC_InitTypeDef NVIC_InitStructure;
     NVIC_InitStructure.NVIC_IRQChannel = IR_TIM_UPDATE_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
     NVIC_InitStructure.NVIC_IRQChannel = IR_TIM_CC_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
@@ -121,20 +121,27 @@ void TIM_Ultrasonic(void)
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);  
 
     TIM_DeInit(Ultrasonic_TIM);
-    TIM_TimeBaseStructure.TIM_Period = (1000-1); 
+    TIM_TimeBaseStructure.TIM_Period = 0xFFFF; 
     TIM_TimeBaseStructure.TIM_Prescaler = (72-1); 
     TIM_TimeBaseStructure.TIM_ClockDivision= TIM_CKD_DIV1;
     TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;  
     TIM_TimeBaseInit(Ultrasonic_TIM, &TIM_TimeBaseStructure);          
     
-    TIM_ClearFlag(Ultrasonic_TIM, TIM_FLAG_Update);  
-    TIM_ITConfig(Ultrasonic_TIM, TIM_IT_Update, ENABLE);
-	TIM_Cmd(Ultrasonic_TIM, DISABLE);//注意:先不开启
+	/* 输入捕获通道 1，上升沿捕获 */
+	TIM_ICInitTypeDef        ic;
+    ic.TIM_Channel     = TIM_Channel_4;
+    ic.TIM_ICPolarity  = TIM_ICPolarity_Rising;
+    ic.TIM_ICSelection = TIM_ICSelection_DirectTI;
+    ic.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+    ic.TIM_ICFilter    = 0x0;
+    TIM_ICInit(Ultrasonic_TIM, &ic);
 	
-    //NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+	TIM_ITConfig(Ultrasonic_TIM, TIM_IT_Update | TIM_IT_CC4, ENABLE);
+    TIM_Cmd(Ultrasonic_TIM, ENABLE);
+
     NVIC_InitStructure.NVIC_IRQChannel = Ultrasonic_TIM_IRQn;             
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;  
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;         
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;  
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;         
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;       
     NVIC_Init(&NVIC_InitStructure);
 }
