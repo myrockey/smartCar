@@ -1,5 +1,25 @@
 #include "stm32f10x.h"
 
+uint32_t uwTick;
+uint32_t uwTickFreq = 1000;
+
+void SysTick_Init(void)
+{
+	SystemCoreClockUpdate(); // 确保 SystemCoreClock 已更新
+	if (SysTick_Config(SystemCoreClock / uwTickFreq) != 0)
+	{
+		while (1)
+		{
+			// 错误处理：SysTick 配置失败，可以添加错误指示，例如闪烁LED
+		}
+	}
+}
+
+uint32_t GetTick(void)
+{
+	return uwTick;
+}
+
 /**
   * @brief  微秒级延时
   * @param  xus 延时时长，范围：0~233015
@@ -7,7 +27,7 @@
   */
 void Delay_us(uint32_t xus)
 {
-	SysTick->LOAD = 72 * xus;				//设置定时器重装值
+	SysTick->LOAD = (SystemCoreClock / 1000000) * xus;				//设置定时器重装值
 	SysTick->VAL = 0x00;					//清空当前计数值
 	SysTick->CTRL = 0x00000005;				//设置时钟源为HCLK，启动定时器
 	while(!(SysTick->CTRL & 0x00010000));	//等待计数到0
@@ -16,17 +36,16 @@ void Delay_us(uint32_t xus)
 
 /**
   * @brief  毫秒级延时
-  * @param  xms 延时时长，范围：0~4294967295
+  * @param  xms 延时时长
   * @retval 无
   */
 void Delay_ms(uint32_t xms)
 {
-	while(xms--)
-	{
-		Delay_us(1000);
-	}
+    uint32_t curTick = GetTick();//ms级
+    uint32_t waitTick = xms;
+    while ((GetTick() - curTick) < waitTick);
 }
- 
+
 /**
   * @brief  秒级延时
   * @param  xs 延时时长，范围：0~4294967295
@@ -38,4 +57,4 @@ void Delay_s(uint32_t xs)
 	{
 		Delay_ms(1000);
 	}
-} 
+}

@@ -72,6 +72,7 @@ uint8_t Receive_Task(void);
 
 int main(void)
 {
+	SysTick_Init();
 	BSP_Init();
 
 	OLED_ShowString(2,1,"D:");
@@ -476,9 +477,14 @@ void DHT11_Task(void)
 void Ultrasonic_Distance_Task(void)
 {
 	RxDataClearFlag = 0;
+	static uint32_t last_ultrasonic_measure_time = 0;
+    if (GetTick() - last_ultrasonic_measure_time > 100) // 每100ms触发一次测量
+    {
+        Ultrasonic_StartMeasure();
+        last_ultrasonic_measure_time = GetTick();
+    }
 	distance = Ultrasonic_Distance();
 	OLED_ShowNum(2,4,distance,3);//显示超声波距离	
-	Delay_ms(100);
 	//距离太近时
 	if(distance < 10)
 	{

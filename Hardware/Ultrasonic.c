@@ -7,17 +7,22 @@
 extern int distance;//距障碍物距离
 
 /*---------------- 仅需新增的全局变量 ----------------*/
+volatile Ultrasonic_State_TypeDef ultrasonic_state = ULTRASONIC_IDLE;
 static volatile int last_valid_distance = 0;   // 保存上一次有效距离(cm)
 volatile uint32_t ic_rising = 0;
 volatile uint32_t ic_falling = 0;
 volatile uint8_t  ic_done   = 0;
 volatile uint16_t ic_ovf    = 0;
+static volatile uint32_t measure_start_time = 0; // 用于超时检测
+
+volatile Ultrasonic_Avoidance_State_TypeDef ultrasonic_avoidance_state = AVOIDANCE_IDLE;
+volatile uint32_t avoidance_start_time = 0;
 
 //IO口初始化 及其他初始化
 void Ultrasonic_Init(void)
-{  
+{
     GPIO_InitTypeDef GPIO_InitStructure;
-    Hcsr04_GPIO_APBX(Hcsr04_GPIO_CLK, ENABLE);
+    RCC_APB2PeriphClockCmd(Hcsr04_GPIO_CLK, ENABLE);
    
     GPIO_InitStructure.GPIO_Pin = TRIG_Pin;      
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -31,6 +36,7 @@ void Ultrasonic_Init(void)
     GPIO_ResetBits(Hcsr04_GPIO,Echo_Pin);     
 
     TIM_Ultrasonic();
+    ultrasonic_state = ULTRASONIC_IDLE;
 }
 
 //获取定时器3计数器值
@@ -50,69 +56,82 @@ uint32_t GetEchoTimer(void)
     return t;
 }
 
-//通过定时器3计数器值推算距离
-float Ultrasonic_Distance(void)
+// 触发超声波测量，非阻塞
+void Ultrasonic_StartMeasure(void)
 {
-   uint8_t valid_samples = 0;
-   uint32_t t = 0;
-   int i = 0;
-   float sum = 0;
-   uint32_t timeout = 0;
+    if (ultrasonic_state == ULTRASONIC_IDLE || ultrasonic_state == ULTRASONIC_TIMEOUT) {
+        ultrasonic_state = ULTRASONIC_TRIGGERING;
+        TRIG_Send = 1;   // 给控制端高电平
+        Delay_us(20);    // 保持20us高电平
+        TRIG_Send = 0;   // 超声波模块已开始发送8个40khz脉冲
 
-   for(i = 0; i < 5; i++)  //测量五次取平均
-   {
-        //timeout = 0;
-        /* 触发10us脉冲 */
-        TRIG_Send = 1;   //给控制端高电平
-        Delay_us(20);
-        TRIG_Send = 0;  //超声波模块已开始发送8个40khz脉冲
-
-        /* 2. 等待捕获完成（超时 65 ms）*/
         ic_done = 0;
         ic_ovf  = 0;
         TIM_SetCounter(Ultrasonic_TIM, 0);
-        while (!ic_done && timeout < 65000) { Delay_us(1); timeout++; }
-        //while (!ic_done) {}
-        
-        /* 3. 计算距离 */
-        if (ic_done)
-        {
-            t = GetEchoTimer();
-            sum += ((float)t * 34/2000);   // us -> cm
-            valid_samples++;
+        measure_start_time = GetTick(); // 记录开始时间，用于超时检测
+        ultrasonic_state = ULTRASONIC_WAITING_ECHO;
+    }
+}
+
+// 在主循环中更新超声波状态和距离
+uint32_t Ultrasonic_Distance(void)
+{
+    uint32_t current_distance = last_valid_distance;// 无论是否超时，只要还在等待回波，都返回上次有效距离
+    if (ultrasonic_state == ULTRASONIC_WAITING_ECHO) {
+        if (ic_done) {
+            uint32_t t = GetEchoTimer();
+            current_distance = (uint32_t)((float)t * 34 / 2000); // us -> cm
+            last_valid_distance = current_distance;
+            ultrasonic_state = ULTRASONIC_IDLE;
+        } else if (GetTick() - measure_start_time > 30) { // 30ms 超时
+            ultrasonic_state = ULTRASONIC_TIMEOUT;
         }
     }
 
-    if(valid_samples == 0)
-    {
-        return last_valid_distance;   // 保存上一次有效距离(cm)
-    }
-    last_valid_distance = sum / valid_samples;   // 只除有效次数
-    return last_valid_distance; //取平均
+    return current_distance;
 }
 
 //超声波避障
 void Ultrasonic_Run(void)
 {
-    //大于30cm还可以往前走
-    if(distance > 30)
+    switch (ultrasonic_avoidance_state)
     {
-        Move_Forward();
-    }
-    //小于30cm还可以往后退
-    if(distance <= 30 && distance > 7)
-    {
-        Move_Backward();
-    }
-    
-    //慢慢转避让
-    if(distance <= 7)
-    { 
-        Clockwise_Rotation();
-        Delay_ms(100);
-        
-        Car_Stop();
-        Delay_ms(500);  
+        case AVOIDANCE_IDLE:
+            if (distance > 30)
+            {
+                Move_Forward();
+            }
+            else if (distance <= 30 && distance > 7)
+            {
+                Move_Backward();
+            }
+            else if (distance <= 7)
+            {
+                Clockwise_Rotation();
+                avoidance_start_time = GetTick();
+                ultrasonic_avoidance_state = AVOIDANCE_ROTATING;
+            }
+            break;
+
+        case AVOIDANCE_ROTATING:
+            if (GetTick() - avoidance_start_time >= 100) // 旋转100ms
+            {
+                Car_Stop();
+                avoidance_start_time = GetTick();
+                ultrasonic_avoidance_state = AVOIDANCE_STOPPING;
+            }
+            break;
+
+        case AVOIDANCE_STOPPING:
+            if (GetTick() - avoidance_start_time >= 500) // 停止500ms
+            {
+                ultrasonic_avoidance_state = AVOIDANCE_IDLE;
+            }
+            break;
+
+        default:
+            ultrasonic_avoidance_state = AVOIDANCE_IDLE;
+            break;
     }
 }
 
